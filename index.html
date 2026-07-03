@@ -24,17 +24,69 @@
     background:var(--bg);
     color:var(--text);
   }
-  .app{
-    display:grid;
-    grid-template-columns: 680px 1fr;
+  /* ---------- HOME SCREEN ---------- */
+  .home{
     min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg, var(--navy-dark) 0%, var(--navy) 55%, #1d3b74 100%);
+    padding:24px;
+  }
+  .home-card{
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+    padding:52px 60px 46px;
+    text-align:center;
+    max-width:420px;
+    width:100%;
+    border-top:5px solid var(--red);
+  }
+  .home-logo{width:220px; max-width:80%; margin-bottom:6px;}
+  .home-title{
+    font-size:24px; font-weight:800; color:var(--navy);
+    letter-spacing:.02em; margin-top:4px;
+  }
+  .home-sub{
+    font-size:11px; font-weight:700; color:var(--red);
+    letter-spacing:.14em; margin-top:6px;
+  }
+  .home-btn{
+    margin-top:30px;
+    background:var(--red); color:#fff; border:none;
+    font-size:16px; font-weight:800; letter-spacing:.03em;
+    padding:14px 46px; border-radius:8px; cursor:pointer;
+    box-shadow:0 4px 14px rgba(193,39,45,.4);
+    transition:transform .12s ease, background .12s ease;
+  }
+  .home-btn:hover{background:var(--red-dark); transform:translateY(-1px);}
+
+  .tabbar{
+    position:sticky; top:0; z-index:100;
+    display:flex; background:var(--navy-dark);
+    box-shadow:0 1px 6px rgba(0,0,0,.25);
+  }
+  .tab{
+    padding:13px 26px; color:#fff; font-size:13.5px; font-weight:700;
+    cursor:pointer; letter-spacing:.02em; border-right:1px solid rgba(255,255,255,.12);
+    user-select:none;
+  }
+  .tab:hover{background:var(--navy);}
+  .tab.active{background:var(--red);}
+  .app{
+    display:block;
   }
   .panel{
     background:var(--paper);
+    padding:20px 24px;
+    max-width:860px;
+    margin:0 auto;
+    min-height:calc(100vh - 46px);
+    border-left:1px solid var(--line);
     border-right:1px solid var(--line);
-    padding:20px;
-    overflow-y:auto;
-    max-height:100vh;
+  }
+  .preview-toolbar{
+    display:flex; gap:10px; align-items:center;
+    max-width:800px; margin:14px auto 0; padding:0 10px;
   }
   .brandbar{
     display:flex;
@@ -232,10 +284,72 @@
   body.pdf-mode .accept{margin-top:8px;}
   body.pdf-mode .sigline{margin-top:22px;}
 
+  /* ---------- SAVED QUOTES DASHBOARD ---------- */
+  .dash{display:flex; min-height:100vh; background:#f4f6fa;}
+  .dash-side{
+    width:230px; flex-shrink:0; background:#fff; border-right:1px solid var(--line);
+    display:flex; flex-direction:column;
+  }
+  .dash-logo{padding:22px 18px 14px; text-align:center;}
+  .dash-logo img{width:150px; max-width:85%;}
+  .dash-item{
+    padding:14px 18px; font-size:14px; font-weight:700; color:#fff;
+    background:var(--navy-dark); border-bottom:1px solid rgba(255,255,255,.12);
+    cursor:pointer; letter-spacing:.01em;
+  }
+  .dash-item:hover{background:var(--navy);}
+  .dash-item.active{background:var(--red);}
+  .dash-foot{
+    margin-top:auto; padding:16px; font-size:10.5px; color:var(--muted);
+    text-align:center; line-height:1.5;
+  }
+  .dash-main{flex:1; padding:18px 22px; overflow-x:auto;}
+  .dash-table{width:100%; border-collapse:collapse; background:#fff; font-size:13px;
+    box-shadow:0 1px 4px rgba(0,0,0,.08); min-width:760px;}
+  .dash-table th{
+    background:var(--navy-dark); color:#fff; text-align:left; padding:9px 12px;
+    font-size:12px; font-weight:700; letter-spacing:.02em; white-space:nowrap;
+  }
+  .dash-table td{padding:10px 12px; border-bottom:1px solid #e8ebf1; vertical-align:middle;}
+  .dash-table tr:hover td{background:#f8fafd;}
+  .dash-cust{font-weight:600; color:#1c2430; text-transform:uppercase; font-size:12.5px;}
+  .dash-loc{font-size:12.5px; text-transform:uppercase;}
+  .dash-loc small{display:block; color:var(--muted); font-size:10.5px; margin-top:1px;}
+  .dash-qno{font-weight:700; white-space:nowrap;}
+  .dash-total{font-weight:600; white-space:nowrap;}
+  .dash-btn{
+    border:none; border-radius:4px; color:#fff; font-size:12px; font-weight:700;
+    padding:7px 12px; cursor:pointer; white-space:nowrap;
+  }
+  .dash-btn.preview{background:#7b2ff2;}
+  .dash-btn.pdf{background:#28a745;}
+  .dash-btn.edit{background:#2f6ff2;}
+  .dash-btn.del{background:#e0433f; padding:7px 10px;}
+  .dash-btn:hover{filter:brightness(.92);}
+  .dash-status{
+    padding:6px 8px; border:1px solid var(--line); border-radius:5px;
+    font-size:12px; font-family:inherit; background:#fff; min-width:110px;
+  }
+  .dash-actions{display:flex; gap:6px;}
+  @media screen and (max-width: 900px){
+    .dash{flex-direction:column;}
+    .dash-side{width:100%; flex-direction:row; align-items:center; flex-wrap:wrap; border-right:none; border-bottom:1px solid var(--line);}
+    .dash-logo{padding:10px;}
+    .dash-logo img{width:90px;}
+    .dash-side nav{display:flex; flex:1;}
+    .dash-item{flex:1; text-align:center; padding:12px 8px; border-bottom:none;}
+    .dash-foot{display:none;}
+    .dash-main{padding:10px;}
+  }
+  @media print{
+    #viewDashboard{display:none !important;}
+  }
+
   @media print{
     body{background:#fff;}
-    .panel, .actions{display:none !important;}
-    .app{grid-template-columns: 1fr;}
+    .panel, .actions, .tabbar, .preview-toolbar, #viewHome{display:none !important;}
+    #viewPreview{display:block !important;}
+    .app{display:none !important;}
     .preview-wrap{padding:0; max-height:none; overflow:visible;}
     .sheet{box-shadow:none; max-width:100%; padding:0.25in 0.35in; min-height:auto;}
     .sheet-head img{height:80px; margin:-4px 0;}
@@ -255,15 +369,15 @@
   }
 
   @media screen and (max-width: 900px){
+    .tab{flex:1; text-align:center; padding:12px 6px; font-size:12px;}
     .app{
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto;
+      display:block;
     }
     .panel{
       max-height:none;
-      border-right:none;
-      border-bottom:1px solid var(--line);
+      border:none;
     }
+    .preview-toolbar{flex-wrap:wrap;}
     .preview-wrap{
       max-height:none;
       padding:16px;
@@ -297,6 +411,23 @@
 </style>
 </head>
 <body>
+<!-- ============ HOME SCREEN ============ -->
+<div id="viewHome">
+  <div class="home">
+    <div class="home-card">
+      <img id="homeLogo" alt="USA Heating &amp; Cooling" class="home-logo">
+      <div class="home-title">HVAC Quoting Tool</div>
+      <div class="home-sub">GREEN BAY &middot; FOX VALLEY &middot; MILWAUKEE</div>
+      <button class="home-btn" onclick="showView('tool')">Get Started</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabbar">
+  <div class="tab active" id="tabTool" onclick="showView('tool')">🛠 Quote Builder</div>
+  <div class="tab" id="tabPreview" onclick="showView('preview')">👁 Quote Preview</div>
+  <div class="tab" id="tabDashboard" onclick="showView('dashboard')">📋 Saved Quotes</div>
+</div>
 <div class="app">
 
   <!-- ============ INPUT PANEL ============ -->
@@ -310,8 +441,8 @@
       <legend>Settings — Saved on This Computer</legend>
       <label style="margin-top:0;">Job Type (sets labor rates below)</label>
       <div class="seg" style="margin-bottom:8px;">
-        <button id="btnJobService" class="active" onclick="setJobType('service')">Service</button>
-        <button id="btnJobInstall" onclick="setJobType('install')">Install</button>
+        <button id="btnJobInstall" class="active" onclick="setJobType('install')">Install</button>
+        <button id="btnJobService" onclick="setJobType('service')">Service</button>
       </div>
       <label style="margin-top:10px;">Wisconsin County (sets Default Tax Rate — state 5% + county rate)</label>
       <select id="wiCountySelect" onchange="applyCountyTax()"></select>
@@ -414,7 +545,7 @@
     <fieldset>
       <legend>Save &amp; Load Quotes — Stored on This Computer</legend>
       <div class="row2">
-        <button class="btn-secondary" style="margin-top:0;" onclick="saveCurrentQuote()">💾 Save Current Quote</button>
+        <button class="btn-secondary" style="margin-top:0;" onclick="saveCurrentQuote()">Save Current Quote</button>
         <button class="btn-secondary" style="margin-top:0; background:var(--muted);" onclick="newQuote()">+ New Quote</button>
       </div>
       <div id="quoteSavedMsg" style="font-size:11px;color:var(--navy);font-weight:700;margin-top:6px;display:none;">✓ Quote saved to this browser.</div>
@@ -429,15 +560,36 @@
     </fieldset>
 
     <div class="actions">
-      <button class="btn-primary" onclick="render(); scrollToPreviewOnMobile();">Generate Preview</button>
-      <button class="btn-secondary" id="pdfBtn" onclick="downloadPDF()">⬇ Download PDF</button>
-      <button class="btn-secondary" style="background:var(--muted);" onclick="window.print()">🖨 Print</button>
+      <button class="btn-primary" onclick="showView('preview')">👁 Preview Quote</button>
     </div>
   </div>
+</div>
 
-  <!-- ============ PREVIEW ============ -->
+<!-- ============ PREVIEW PAGE ============ -->
+<div id="viewPreview" style="display:none;">
+  <div class="preview-toolbar">
+    <button class="btn-secondary" style="margin-top:0; width:auto; padding:10px 18px;" onclick="showView('tool')">← Back to Builder</button>
+    <div style="flex:1;"></div>
+    <button class="btn-secondary" id="pdfBtn" style="margin-top:0; width:auto; padding:10px 18px;" onclick="downloadPDF()">⬇ Download PDF</button>
+    <button class="btn-secondary" style="margin-top:0; width:auto; padding:10px 18px; background:var(--muted);" onclick="window.print()">🖨 Print</button>
+  </div>
   <div class="preview-wrap">
     <div class="sheet" id="sheet"></div>
+  </div>
+</div>
+
+<!-- ============ SAVED QUOTES DASHBOARD ============ -->
+<div id="viewDashboard" style="display:none;">
+  <div class="dash">
+    <main class="dash-main">
+      <table class="dash-table">
+        <thead>
+          <tr><th>Preview</th><th>Date</th><th>Quote #</th><th>Customer</th><th>Location</th><th>Total</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="dashBody"></tbody>
+      </table>
+      <div id="dashEmpty" class="empty-hint" style="display:none; padding:30px; text-align:center; font-size:14px;">No saved quotes yet. Build a quote and click "Save Current Quote".</div>
+    </main>
   </div>
 </div>
 
@@ -470,7 +622,7 @@ function updateToggleLabels(){
   document.getElementById('btnComRate').textContent = '$' + rateStore[jobType].com;
 }
 
-let jobType = 'service'; // 'service' | 'install'
+let jobType = 'install'; // 'service' | 'install'
 const DEFAULT_RATES = {
   service: {res:125, com:175},
   install: {res:75,  com:105},
@@ -671,6 +823,78 @@ function applyCountyTax(){
   } else {
     noteEl.style.display = 'none';
   }
+}
+
+// ---------- Saved Quotes Dashboard ----------
+const QUOTE_STATUSES = ['Pending','Sent','Approved','Declined','Completed'];
+
+function showView(v){
+  document.getElementById('viewHome').style.display = (v==='home') ? '' : 'none';
+  document.querySelector('.tabbar').style.display = (v==='home') ? 'none' : 'flex';
+  document.querySelector('.app').style.display = (v==='tool') ? '' : 'none';
+  document.getElementById('viewPreview').style.display = (v==='preview') ? '' : 'none';
+  document.getElementById('viewDashboard').style.display = (v==='dashboard') ? '' : 'none';
+  document.getElementById('tabTool').classList.toggle('active', v==='tool');
+  document.getElementById('tabPreview').classList.toggle('active', v==='preview');
+  document.getElementById('tabDashboard').classList.toggle('active', v==='dashboard');
+  if(v==='preview') render();
+  if(v==='dashboard') renderDashboard();
+  window.scrollTo(0,0);
+}
+
+function renderDashboard(){
+  const quotes = loadQuotes();
+  const body = document.getElementById('dashBody');
+  const empty = document.getElementById('dashEmpty');
+  empty.style.display = quotes.length ? 'none' : 'block';
+  body.innerHTML = quotes.map(q=>{
+    const total = computeTotalForQuote(q);
+    const dateStr = q.quoteDate ? fmtDate(new Date(q.quoteDate)) : '';
+    const status = q.status || 'Pending';
+    const opts = QUOTE_STATUSES.map(s=>`<option value="${s}" ${s===status?'selected':''}>${s}</option>`).join('');
+    const loc1 = esc(q.custAddr||'');
+    const loc2 = esc(q.custCity||'');
+    return `<tr>
+      <td><button class="dash-btn preview" onclick="dashOpen('${q.quoteNo}','preview')">Preview</button></td>
+      <td>${dateStr}</td>
+      <td class="dash-qno">${esc(q.quoteNo)}</td>
+      <td class="dash-cust">${esc(q.custName)||'(no name)'}</td>
+      <td class="dash-loc">${loc1||'—'}${loc2?`<small>${loc2}</small>`:''}</td>
+      <td class="dash-total">${money(total)}</td>
+      <td><select class="dash-status" onchange="dashStatusChanged('${q.quoteNo}', this.value)">${opts}</select></td>
+      <td><div class="dash-actions">
+        <button class="dash-btn pdf" onclick="dashPDF('${q.quoteNo}')">PDF</button>
+        <button class="dash-btn edit" onclick="dashOpen('${q.quoteNo}','edit')">Edit</button>
+        <button class="dash-btn del" onclick="dashDelete('${q.quoteNo}')">X</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function dashStatusChanged(no, status){
+  const quotes = loadQuotes();
+  const q = quotes.find(x=>x.quoteNo===no);
+  if(q){ q.status = status; saveQuotesArr(quotes); }
+}
+
+function dashOpen(no, mode){
+  loadQuoteByNo(no);
+  showView(mode==='preview' ? 'preview' : 'tool');
+}
+
+function dashDelete(no){
+  if(!confirm('Delete quote ' + no + '? This cannot be undone.')) return;
+  let quotes = loadQuotes();
+  quotes = quotes.filter(x=>x.quoteNo!==no);
+  saveQuotesArr(quotes);
+  renderQuotesList();
+  renderDashboard();
+}
+
+function dashPDF(no){
+  loadQuoteByNo(no);
+  showView('preview');
+  downloadPDF();
 }
 
 function scrollToPreviewOnMobile(){
@@ -999,6 +1223,7 @@ function saveCurrentQuote(){
   const quotes = loadQuotes();
   const idx = quotes.findIndex(x=>x.quoteNo === state.quoteNo);
   state.savedAt = new Date().toISOString();
+  state.status = (idx>=0 && quotes[idx].status) ? quotes[idx].status : 'Pending';
   if(idx>=0) quotes[idx] = state; else quotes.unshift(state);
   if(saveQuotesArr(quotes)){
     renderQuotesList();
@@ -1036,7 +1261,7 @@ function newQuote(){
   document.getElementById('truckCharge').value = (jobType === 'service') ? 135 : 0;
   document.getElementById('discount').value=0;
   document.getElementById('showTruckLine').checked=true;
-  document.getElementById('includeTax').checked=true;
+  document.getElementById('includeTax').checked = (jobType !== 'install');
   document.getElementById('fullSummaryText').value='';
   setDetailMode('itemized');
   document.getElementById('partsBody').innerHTML='';
@@ -1085,11 +1310,14 @@ function importBackup(file){
 }
 
 // seed with one blank part row and initial render
+document.getElementById('homeLogo').src = document.querySelector('.brandbar img').src;
 populateCountyDropdown();
 loadSettings();
+setJobType('install'); // normalize defaults: install rates, no tax, no truck charge
 addPart('', 0, 50, 1);
 renderQuotesList();
 render();
+showView('home');
 </script>
 </body>
 </html>
