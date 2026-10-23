@@ -4,17 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Builder Work Order · USA Heating &amp; Cooling</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 /* Layout: price sheet (pick options) on the left, live work order sheet on the right; stacked on phones. */
 :root{
   --navy:#16215F; --navy-2:#24307A; --red:#A41616; --pink:#F3C4C4;
   --ink:#1A1F2B; --muted:#5A6577; --line:#DDE3EB; --wash:#F3F6FA; --paper:#FFFFFF; --bg:#E9EEF4;
-  --display:'Barlow Condensed', 'Arial Narrow', sans-serif;
-  --body:'Barlow', 'Segoe UI', system-ui, sans-serif;
+  --display:"Segoe UI", Helvetica, Arial, sans-serif;
+  --body:"Segoe UI", Helvetica, Arial, sans-serif;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -26,12 +23,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .topbar{background:#fff;color:var(--navy);border-bottom:4px solid var(--navy);box-shadow:0 4px 0 var(--red)}
 .topbar-in{max-width:1500px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-left)) 14px max(16px,env(safe-area-inset-right));display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:12px}
-.tag{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:var(--navy);line-height:1.1}
+.tag{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.5px;text-transform:uppercase;color:var(--navy);line-height:1.1}
 .tag small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:1.5px;color:var(--muted)}
 .brand img{height:64px;width:auto;display:block}
 .top-total{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .top-total .lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-.top-total .amt{font-family:var(--display);font-weight:700;font-size:30px;font-variant-numeric:tabular-nums}
+.top-total .amt{font-family:var(--display);font-weight:800;font-size:25px;font-variant-numeric:tabular-nums}
 .back{color:var(--navy);font-size:13px;font-weight:600}
 
 .wrap{max-width:1500px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right));display:grid;grid-template-columns:minmax(0,1fr) minmax(0,880px);gap:24px;align-items:start}
@@ -39,7 +36,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .panel{display:flex;flex-direction:column;gap:16px;min-width:0}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.card h2{margin:0;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--navy);padding:9px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.card h2{margin:0;font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:var(--navy);padding:9px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .card h2 small{font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:0;text-transform:none;color:#C9D6E6}
 .card .body{padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .sub{font-size:12px;color:var(--muted);font-weight:600;padding:8px 0 4px;text-transform:uppercase;letter-spacing:1px}
@@ -99,8 +96,8 @@ select.tier{width:100%;height:42px;border:1px solid #B9C3D0;border-radius:5px;pa
 .s-head{background:#fff;padding:22px 36px 16px;display:flex;justify-content:space-between;align-items:center;gap:20px}
 .s-head img{height:104px;width:auto;display:block}
 .s-head .wo{text-align:right}
-.s-head .wo .k{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:3px;text-transform:uppercase;color:var(--red)}
-.s-head .wo .v{font-family:var(--display);font-weight:800;font-size:34px;line-height:1.05;color:var(--navy)}
+.s-head .wo .k{font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--red)}
+.s-head .wo .v{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;color:var(--navy)}
 .s-head .wo .d{font-size:12px;color:var(--muted)}
 .s-stripe{height:8px;background:var(--navy);border-bottom:5px solid var(--red)}
 .s-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;padding:20px 36px 16px;font-size:13px;line-height:1.65}
@@ -126,11 +123,26 @@ table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font
 .sheet.pdf .s-sign{padding:30px 30px 10px}
 .s-total{display:flex;justify-content:flex-end;padding:14px 36px 0}
 .s-total .box{display:flex;justify-content:space-between;align-items:center;gap:40px;background:var(--navy);color:#fff;padding:10px 16px;min-width:300px;border-bottom:4px solid var(--red)}
-.s-total .box span:first-child{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:1px}
-.s-total .box span:last-child{font-family:var(--display);font-weight:700;font-size:28px;font-variant-numeric:tabular-nums}
+.s-total .box span:first-child{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:1.5px}
+.s-total .box span:last-child{font-family:var(--display);font-weight:800;font-size:24px;font-variant-numeric:tabular-nums}
 .s-notes{margin:18px 36px 0;padding:12px 14px;background:var(--wash);border-top:3px solid var(--navy);font-size:11.5px;line-height:1.55;color:#2D3748;white-space:pre-line}
 .s-sign{margin-top:auto;padding:40px 36px 30px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px;font-size:11px;color:var(--muted)}
 .s-sign div{border-top:1px solid var(--ink);padding-top:6px}
+.psheet{width:768px;background:#fff;color:var(--ink);font-family:var(--body)}
+.ps-head{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px 26px 10px}
+.ps-head img{height:84px;width:auto;display:block}
+.ps-title{text-align:right}
+.ps-title .k{font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--red)}
+.ps-title .v{font-family:var(--display);font-weight:800;font-size:24px;line-height:1.05;color:var(--navy)}
+.ps-title .d{font-size:11px;color:var(--muted)}
+.ps-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 26px;padding:12px 26px 6px}
+.ps-sec{margin-bottom:9px}
+.ps-h{font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--navy);padding:3px 8px}
+.ps-note{font-size:9.5px;color:var(--muted);font-weight:600;padding:3px 0 0}
+.ps-sub{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--red);padding:5px 0 1px}
+.ps-row{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;line-height:1.3;padding:2.5px 0;border-bottom:1px solid var(--line)}
+.ps-row b{white-space:nowrap;color:var(--navy);font-variant-numeric:tabular-nums}
+.ps-foot{margin:6px 0 0;padding:8px 10px;background:var(--wash);border-top:3px solid var(--navy);font-size:9.5px;line-height:1.45;display:flex;flex-direction:column;gap:2px}
 
 .toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:5px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
@@ -203,6 +215,7 @@ table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font
       <div class="body" style="gap:12px">
         <div class="btnrow">
           <button class="btn small" type="button" id="editPrices" aria-pressed="false">Edit prices</button>
+          <button class="btn small primary" type="button" id="psBtn">Download price sheet (PDF)</button>
           <button class="btn small" type="button" id="exportPrices">Export price list</button>
           <label class="btn small" for="importFile">Import price list</label>
           <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -261,10 +274,10 @@ var SECTIONS = [
     {id:'b_under', group:'bsmt', name:'Basement Finish Rough In (Under 600 sq ft)', price:909.00, ctl:'12-100-60'},
     {id:'b_over', group:'bsmt', name:'Basement Finish Rough In (Over 600 sq ft)', price:1635.00, ctl:'12-100-60'}
   ]},
-  { title:'Furnace', note:'97% Two-Stage ECM · includes Ecobee Lite thermostat', items:[
-    {tier:'furn', label:'Furnace size (sq ft)', ctl:'12-150-30', name:'Furnace by Square Footage', options:[
-      [900,1250,5375.91],[1251,1500,5621.58],[1501,1850,5816.67],[1851,2100,5925.06],[2101,2450,6105.70],
-      [2451,2750,6279.12],[2751,3000,6647.63],[3001,3350,6936.65],[3351,3750,7290.72],[3751,null,null]]},
+  { title:'Furnace', note:'96% Single-Stage · includes Ecobee Lite thermostat', items:[
+    {tier:'furn', label:'Furnace size (sq ft)', ctl:'12-150-30', name:'96% Single-Stage Furnace by Square Footage', options:[
+      [900,1250,5107.11],[1251,1500,5340.50],[1501,1850,5525.84],[1851,2100,5628.81],[2101,2450,5800.42],
+      [2451,2750,5965.16],[2751,3000,6315.25],[3001,3350,6589.82],[3351,3750,6926.18],[3751,null,null]]},
     {id:'f_2stage', group:'fupg', name:'Upgrade to 2-Stage Furnace (97% Variable Speed)', price:655.52, ctl:'12-150-30'},
     {id:'f_mod', group:'fupg', name:'Upgrade to Modulating Furnace (97%)', price:1845.00, ctl:'12-150-30'},
     {id:'f_lp', kind:'one', name:'LP (Propane) Conversion', price:225.00, ctl:'12-150-30'}
@@ -309,7 +322,6 @@ var SECTIONS = [
     {id:'d_single', group:'duct', name:'Duct Cleaning & Registers (Single Story)', price:450.80, ctl:'12-400-30'},
     {id:'d_two', group:'duct', name:'Duct Cleaning & Registers (Two Story)', price:579.60, ctl:'12-400-30'},
     {id:'d_prot', kind:'one', name:'Register Protectors (per house)', price:150.00, ctl:'12-150-30'},
-    {id:'d_model', kind:'one', name:'Model Adder (Barbara, Chapel Hill, Custom, Glenwood I&II, Greystone, Hamilton, Nottingham I&II)', price:1000.00, ctl:'12-150-60'}
   ]}
 ];
 
@@ -320,7 +332,7 @@ SECTIONS.forEach(function(s){ s.items.forEach(function(it){
 });});
 
 // ---- Adjustable price list (saved in this browser) ----
-var PKEY = 'usa-builder-prices-v1', EDIT = false;
+var PKEY = 'usa-builder-prices-v2', EDIT = false;
 function currentPrices(){
   var p = {items:{}, tiers:{}};
   Object.keys(ITEMS).forEach(function(id){ if (ITEMS[id].price != null) p.items[id] = ITEMS[id].price; });
@@ -337,7 +349,13 @@ function applyPrices(p){
 }
 var DEFAULTS = JSON.parse(JSON.stringify(currentPrices()));
 try { applyPrices(JSON.parse(localStorage.getItem(PKEY) || 'null')); } catch(e){}
-function savePrices(){ try { localStorage.setItem(PKEY, JSON.stringify(currentPrices())); } catch(e){} updatePriceStatus(); }
+function priceChanges(){
+  var cur = currentPrices(), out = {items:{}, tiers:{}};
+  Object.keys(cur.items).forEach(function(id){ if (cur.items[id] !== DEFAULTS.items[id]) out.items[id] = cur.items[id]; });
+  Object.keys(cur.tiers).forEach(function(t){ cur.tiers[t].forEach(function(v,i){ if (v !== DEFAULTS.tiers[t][i]) { out.tiers[t] = out.tiers[t] || []; out.tiers[t][i] = v; } }); });
+  return out;
+}
+function savePrices(){ try { localStorage.setItem(PKEY, JSON.stringify(priceChanges())); } catch(e){} updatePriceStatus(); }
 function updatePriceStatus(){
   var custom = JSON.stringify(currentPrices()) !== JSON.stringify(DEFAULTS), el = document.getElementById('priceStatus');
   if (el) el.textContent = custom ? 'Custom prices in use' : 'Standard prices';
@@ -497,7 +515,7 @@ function renderSheet(){
     '<table class="lines"><thead><tr><th class="ctlcol" style="width:88px">CTL No.</th><th>Description</th><th class="r" style="width:44px">Qty</th><th style="width:44px">Unit</th><th class="r" style="width:84px">Cost/Unit</th><th class="r" style="width:96px">Cost</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="s-total"><div class="box"><span>TOTAL</span><span>'+money(total)+'</span></div></div>'+
     (j.notes?'<div class="s-notes">'+esc(j.notes)+'</div>':'')+
-    '<div class="s-notes">Included in price: all supply and return ducting. Furnace includes (1) Ecobee Lite WiFi thermostat.</div>'+
+    '<div class="s-notes">Included in price: all supply and return ducting. 96% single-stage furnace includes (1) Ecobee Lite WiFi thermostat.</div>'+
     '<div class="s-sign"><div>Approved by (Builder) · Date</div><div>USA Heating &amp; Cooling · Date</div></div>';
   document.getElementById('topTotal').textContent = money(total);
 }
@@ -656,38 +674,83 @@ function pdfName(){
   return base.replace(/[\\/:*?"<>|]+/g, '-').trim() + '.pdf';
 }
 var pdfBusy = false;
-function downloadPdf(){
+// Render any element to a letter-size PDF download. A clean copy is pinned top-left at page width so nothing is clipped.
+function makePdf(el, filename, btns, label, avoid){
   if (pdfBusy) return;
   if (!window.html2pdf) { toast('PDF maker did not load. Check your internet, or use Print.'); return; }
   pdfBusy = true;
-  var btns = [document.getElementById('pdfBtn'), document.getElementById('pdfTop')];
   btns.forEach(function(b){ b.disabled = true; b.textContent = 'Making PDF…'; });
-  // render a clean copy pinned to the top-left so nothing is clipped or offset
   var wrap = document.createElement('div');
   wrap.style.cssText = 'position:absolute;left:0;top:0;width:768px;background:#fff;z-index:-1;pointer-events:none';
-  var el = sheetEl.cloneNode(true);
-  el.removeAttribute('id'); el.classList.add('pdf');
-  el.style.cssText = 'width:768px;min-width:768px;min-height:0;box-shadow:none';
   wrap.appendChild(el); document.body.appendChild(wrap);
   var y = window.scrollY; window.scrollTo(0, 0);
   html2pdf().set({
     margin: [0.25, 0.25, 0.25, 0.25],
-    filename: pdfName(),
+    filename: filename,
     image: { type: 'jpeg', quality: 0.97 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.s-total', '.s-sign', '.s-info'] }
+    pagebreak: { mode: ['css', 'legacy'], avoid: avoid }
   }).from(el).save().then(function(){
     toast('PDF downloaded');
   }, function(){
-    toast('Could not make the PDF. Try Print instead.');
+    toast('Could not make the PDF. Try again, or use Print.');
   }).then(function(){
     wrap.remove(); window.scrollTo(0, y); pdfBusy = false;
-    btns.forEach(function(b){ b.disabled = false; b.textContent = 'Download PDF'; });
+    btns.forEach(function(b){ b.disabled = false; b.textContent = label; });
   });
+}
+function downloadPdf(){
+  var el = sheetEl.cloneNode(true);
+  el.removeAttribute('id'); el.classList.add('pdf');
+  el.style.cssText = 'width:768px;min-width:768px;min-height:0;box-shadow:none';
+  makePdf(el, pdfName(), [document.getElementById('pdfBtn'), document.getElementById('pdfTop')], 'Download PDF', ['tr', '.s-total', '.s-sign', '.s-info']);
 }
 document.getElementById('pdfBtn').addEventListener('click', downloadPdf);
 document.getElementById('pdfTop').addEventListener('click', downloadPdf);
+
+// ---- Price sheet PDF (always uses the current prices) ----
+function buildPriceSheet(){
+  var left = [], right = [];
+  SECTIONS.forEach(function(s, i){ (i < 3 ? left : right).push(s); });
+  function col(secs){
+    return secs.map(function(s){
+      var h = '<div class="ps-sec"><div class="ps-h">'+esc(s.title)+'</div>'+(s.note?'<div class="ps-note">'+esc(s.note)+'</div>':'');
+      s.items.forEach(function(it){
+        if (it.sub) { h += '<div class="ps-sub">'+esc(it.sub)+'</div>'; return; }
+        if (it.tier) {
+          h += '<div class="ps-sub">'+esc(it.label)+'</div>';
+          it.options.forEach(function(o){ h += '<div class="ps-row"><span>'+tierLabel(o)+' sq ft</span><b>'+(o[2]!=null?money(cents(o[2])):'Inquire')+'</b></div>'; });
+          return;
+        }
+        var pr = it.kind === 'tbd' ? 'Quoted per job'
+          : it.kind === 'meas' ? money(cents(it.price))+' / '+(it.unit==='SF'?'sq ft':'ft')
+          : it.kind === 'qty' ? money(cents(it.price))+' ea'
+          : money(cents(it.price));
+        h += '<div class="ps-row"><span>'+esc(it.name)+'</span><b>'+pr+'</b></div>';
+      });
+      return h + '</div>';
+    }).join('');
+  }
+  var c = contact, d = new Date().toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+  var el = document.createElement('div');
+  el.className = 'psheet';
+  el.innerHTML =
+    '<div class="ps-head"><img src="'+logoSrc+'" alt="USA Heating &amp; Cooling">'+
+      '<div class="ps-title"><div class="k">New Construction</div><div class="v">HVAC Builder Pricing</div><div class="d">Effective '+esc(d)+'</div>'+
+      ((c.name||c.phone||c.email) ? '<div class="d">'+[c.name,c.phone,c.email].filter(Boolean).map(esc).join(' · ')+'</div>' : '')+'</div></div>'+
+    '<div class="s-stripe"></div>'+
+    '<div class="ps-cols"><div>'+col(left)+'</div><div>'+col(right)+
+    '<div class="ps-foot">'+
+      '<div><b>Included in price:</b> all supply and return ducting. 96% single-stage furnace includes (1) Ecobee Lite WiFi thermostat.</div>'+
+      '<div><b>Builder Standard Package:</b> MERV 10 filter &amp; cabinet, 8" fresh air, AC brackets, duct cleaning, register protectors.</div>'+
+      '<div>Upgraded variable-speed furnace includes a standard non-programmable thermostat unless an upgrade is purchased. Heat pump requires an Ecobee thermostat.</div>'+
+    '</div></div></div>';
+  return el;
+}
+document.getElementById('psBtn').addEventListener('click', function(){
+  makePdf(buildPriceSheet(), 'USA Heating & Cooling Builder Price Sheet.pdf', [document.getElementById('psBtn')], 'Download price sheet (PDF)', ['.ps-row', '.ps-h', '.ps-foot']);
+});
 document.getElementById('copyBtn').addEventListener('click', function(){
   var L = lines(), total = L.reduce(function(a,l){ return a+l.cost; },0);
   var rows = [['CTL No.','Description','Qty','Unit','Cost/Unit','Cost']];
