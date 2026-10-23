@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 /* Layout: price sheet (pick options) on the left, live work order sheet on the right; stacked on phones. */
 :root{
@@ -60,6 +61,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .unit{font-size:12px;color:var(--muted)}
 select.tier{width:100%;height:42px;border:1px solid #B9C3D0;border-radius:5px;padding:0 10px;background:#fff;margin:4px 0 6px}
 .hint{font-size:12px;color:var(--muted);padding:4px 4px 0}
+.pctrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.pctrow label{font-weight:600}
+.num.edit{border-color:var(--red);background:#FFF7F7;font-weight:600;color:var(--navy)}
+.tieredit{min-height:40px;padding:4px 4px 4px 14px}
+#sections.editing .card h2{background:var(--red)}
+.btn[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.btn[aria-pressed="true"]:hover{background:#861111}
 
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;padding:14px}
 @media (max-width:560px){.fields{grid-template-columns:minmax(0,1fr)}}
@@ -108,6 +116,14 @@ table.lines .c{color:var(--muted);white-space:nowrap}
 table.lines .cost{font-weight:600}
 table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font-style:italic;background:#fff}
 .hide-ctl .ctlcol{display:none}
+.sheet.pdf .s-head{padding:16px 30px 12px}
+.sheet.pdf .s-head img{height:88px}
+.sheet.pdf .s-info{padding:14px 30px 12px}
+.sheet.pdf table.lines{width:calc(100% - 60px);margin:0 30px}
+.sheet.pdf table.lines td{padding:5px 8px}
+.sheet.pdf .s-total{padding:12px 30px 0}
+.sheet.pdf .s-notes{margin:14px 30px 0}
+.sheet.pdf .s-sign{padding:30px 30px 10px}
 .s-total{display:flex;justify-content:flex-end;padding:14px 36px 0}
 .s-total .box{display:flex;justify-content:space-between;align-items:center;gap:40px;background:var(--navy);color:#fff;padding:10px 16px;min-width:300px;border-bottom:4px solid var(--red)}
 .s-total .box span:first-child{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:1px}
@@ -144,7 +160,7 @@ table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font
     <div class="top-total">
       <a class="back" href="./" id="backLink">← Quote Builder</a>
       <div><div class="lbl">Work order total</div><div class="amt" id="topTotal">$0.00</div></div>
-      <button class="btn primary" type="button" id="printTop">Print / Save PDF</button>
+      <button class="btn primary" type="button" id="pdfTop">Download PDF</button>
     </div>
   </div>
 </header>
@@ -182,6 +198,28 @@ table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font
       <button class="btn" type="button" id="confirmClear" hidden>Yes, clear everything</button>
     </div>
 
+    <div class="card">
+      <h2>Price List <small id="priceStatus">Standard prices</small></h2>
+      <div class="body" style="gap:12px">
+        <div class="btnrow">
+          <button class="btn small" type="button" id="editPrices" aria-pressed="false">Edit prices</button>
+          <button class="btn small" type="button" id="exportPrices">Export price list</button>
+          <label class="btn small" for="importFile">Import price list</label>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+        <div class="pctrow">
+          <label for="pct">Raise or lower every price by</label>
+          <span class="ctrl"><input class="num" id="pct" type="number" step="0.1" inputmode="decimal" placeholder="0"><span class="unit">%</span></span>
+          <button class="btn small" type="button" id="applyPct">Apply</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn small" type="button" id="resetPrices">Reset to standard prices</button>
+          <button class="btn small" type="button" id="confirmReset" hidden>Yes, reset all prices</button>
+        </div>
+        <div class="hint" style="padding:0">Price changes save in this browser and update the work order right away. Use a negative % to lower prices. Export the list to load the same prices on another computer.</div>
+      </div>
+    </div>
+
     <div id="sections"></div>
 
     <div class="card">
@@ -195,7 +233,8 @@ table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font
 
   <section class="out" aria-label="Work order">
     <div class="btnrow no-print">
-      <button class="btn primary" type="button" id="printBtn">Print / Save PDF</button>
+      <button class="btn primary" type="button" id="pdfBtn">Download PDF</button>
+      <button class="btn" type="button" id="printBtn">Print</button>
       <button class="btn" type="button" id="copyBtn">Copy lines (paste into Excel)</button>
       <label class="btn" style="font-weight:600"><input type="checkbox" id="showCtl" checked style="width:18px;height:18px;accent-color:var(--red)"> Show CTL #</label>
     </div>
@@ -256,12 +295,10 @@ var SECTIONS = [
     {id:'t_lite', kind:'qty', name:'Ecobee Lite (Essential) WiFi Thermostat', price:218.00, ctl:'12-150-60'},
     {id:'t_prem', kind:'qty', name:'Ecobee Premium WiFi w/ Room Sensor & Voice', price:397.77, ctl:'12-150-60'}
   ]},
-  { title:'Venting, Gas & Extras', items:[
-    {id:'v_bath', kind:'qty', name:'Bath Fan Venting', price:146.00, ctl:'12-150-60', hint:'2 bath fans included'},
+  { title:'Fresh Air, Gas & Extras', items:[
     {id:'v_fresh6', kind:'qty', name:'6" Additional Fresh Air', price:450.00, ctl:'12-150-60'},
     {id:'v_fresh8', kind:'qty', name:'8" Additional Fresh Air', price:650.00, ctl:'12-150-60'},
     {id:'v_inline', kind:'tbd', name:'Inline Heat for 8" Fresh Air (per UDC)', ctl:'12-150-60'},
-    {id:'v_hood', kind:'tbd', name:'Cook Stove / Hood Venting (non-standard)', ctl:'12-150-60'},
     {id:'v_custom', kind:'tbd', name:'Custom Cook Stove Venting or Laundry Chute (T&M)', ctl:'12-150-60'},
     {id:'g_pipe', kind:'meas', unit:'FT', name:'Gas Piping for Additional Appliances', price:8.30, ctl:'12-150-60'},
     {id:'g_floor', kind:'meas', unit:'SF', name:'In-Floor Heating Rough In (no insulation)', price:1.95, ctl:'12-150-60'},
@@ -281,6 +318,31 @@ SECTIONS.forEach(function(s){ s.items.forEach(function(it){
   if (it.id) { if (it.group) it.kind = 'radio'; ITEMS[it.id] = it; }
   if (it.tier) TIERS[it.tier] = it;
 });});
+
+// ---- Adjustable price list (saved in this browser) ----
+var PKEY = 'usa-builder-prices-v1', EDIT = false;
+function currentPrices(){
+  var p = {items:{}, tiers:{}};
+  Object.keys(ITEMS).forEach(function(id){ if (ITEMS[id].price != null) p.items[id] = ITEMS[id].price; });
+  Object.keys(TIERS).forEach(function(t){ p.tiers[t] = TIERS[t].options.map(function(o){ return o[2]; }); });
+  return p;
+}
+function applyPrices(p){
+  if (!p || typeof p !== 'object') return 0;
+  var n = 0;
+  Object.keys(p.items || {}).forEach(function(id){ var v = Number(p.items[id]); if (ITEMS[id] && ITEMS[id].price != null && isFinite(v) && v >= 0) { ITEMS[id].price = v; n++; } });
+  Object.keys(p.tiers || {}).forEach(function(t){ if (!TIERS[t] || !Array.isArray(p.tiers[t])) return;
+    p.tiers[t].forEach(function(v,i){ var o = TIERS[t].options[i]; v = Number(v); if (o && o[2] != null && v != null && isFinite(v) && v > 0) { o[2] = v; n++; } }); });
+  return n;
+}
+var DEFAULTS = JSON.parse(JSON.stringify(currentPrices()));
+try { applyPrices(JSON.parse(localStorage.getItem(PKEY) || 'null')); } catch(e){}
+function savePrices(){ try { localStorage.setItem(PKEY, JSON.stringify(currentPrices())); } catch(e){} updatePriceStatus(); }
+function updatePriceStatus(){
+  var custom = JSON.stringify(currentPrices()) !== JSON.stringify(DEFAULTS), el = document.getElementById('priceStatus');
+  if (el) el.textContent = custom ? 'Custom prices in use' : 'Standard prices';
+}
+function r2(v){ return Math.round(v*100)/100; }
 
 var KEY = 'usa-builder-workorder-v1';
 var state = blank();
@@ -333,25 +395,33 @@ function lines(){
 
 // ---- Render the price sheet (once) ----
 var secEl = document.getElementById('sections');
+function priceCell(it, suffix){
+  if (EDIT) return '<span class="ctrl"><span class="unit">$</span><input class="num edit" type="number" step="0.01" min="0" inputmode="decimal" data-setprice="'+it.id+'" value="'+it.price.toFixed(2)+'" aria-label="Price for '+esc(it.name)+'">'+(suffix?'<span class="unit">'+suffix+'</span>':'')+'</span>';
+  return '<span class="price">'+money(cents(it.price))+(suffix?' <span class="unit">'+suffix+'</span>':'')+'</span>';
+}
+function tierText(o){ return tierLabel(o)+' sq ft — '+(o[2]!=null?money(cents(o[2])):'Inquire'); }
 function renderSections(){
   var h = '';
+  secEl.classList.toggle('editing', EDIT);
   SECTIONS.forEach(function(s, si){
     h += '<div class="card"><h2>'+esc(s.title)+(s.note?' <small>'+esc(s.note)+'</small>':'')+'</h2><div class="body">';
     s.items.forEach(function(it){
       if (it.sub) { h += '<div class="sub">'+esc(it.sub)+'</div>'; return; }
       if (it.tier) {
         h += '<label class="sub" for="tier_'+it.tier+'">'+esc(it.label)+'</label><select class="tier" id="tier_'+it.tier+'" data-tier="'+it.tier+'"><option value="">— Not included —</option>';
-        it.options.forEach(function(o,i){ h += '<option value="'+i+'">'+tierLabel(o)+' sq ft — '+(o[2]!=null?money(cents(o[2])):'Inquire')+'</option>'; });
+        it.options.forEach(function(o,i){ h += '<option value="'+i+'">'+tierText(o)+'</option>'; });
         h += '</select><div class="row" id="tierp_'+it.tier+'" hidden><span>Quoted price</span><span></span><input class="num" type="number" step="0.01" min="0" inputmode="decimal" id="tierprice_'+it.tier+'" data-tierprice="'+it.tier+'" placeholder="0.00"></div>';
+        if (EDIT) it.options.forEach(function(o,i){ if (o[2]==null) return;
+          h += '<div class="row tieredit"><span>'+tierLabel(o)+' sq ft</span><span></span><span class="ctrl"><span class="unit">$</span><input class="num edit" type="number" step="0.01" min="0" inputmode="decimal" data-settier="'+it.tier+':'+i+'" value="'+o[2].toFixed(2)+'" aria-label="'+esc(it.label)+' '+tierLabel(o)+' price"></span></div>'; });
         return;
       }
-      var id = it.id, ctrl = '', price = it.price!=null ? money(cents(it.price)) : '';
+      var id = it.id, ctrl = '';
       if (it.kind === 'radio' || it.kind === 'one') {
-        ctrl = '<label class="pick"><input type="'+(it.kind==='radio'?'radio':'checkbox')+'" '+(it.kind==='radio'?'name="g_'+it.group+'"':'')+' id="i_'+id+'" data-one="'+id+'"><span>'+esc(it.name)+'</span></label><span></span><span class="price">'+price+'</span>';
+        ctrl = '<label class="pick"><input type="'+(it.kind==='radio'?'radio':'checkbox')+'" '+(it.kind==='radio'?'name="g_'+it.group+'"':'')+' id="i_'+id+'" data-one="'+id+'"><span>'+esc(it.name)+'</span></label><span></span>'+priceCell(it,'');
       } else if (it.kind === 'qty') {
-        ctrl = '<label class="pick" for="i_'+id+'"><span>'+esc(it.name)+(it.hint?' <span class="unit">· '+esc(it.hint)+'</span>':'')+'</span></label><span class="step"><button type="button" data-dec="'+id+'" aria-label="Less '+esc(it.name)+'">−</button><input type="number" min="0" inputmode="numeric" id="i_'+id+'" data-qty="'+id+'" value="0"><button type="button" data-inc="'+id+'" aria-label="More '+esc(it.name)+'">+</button></span><span class="price">'+price+' <span class="unit">ea</span></span>';
+        ctrl = '<label class="pick" for="i_'+id+'"><span>'+esc(it.name)+(it.hint?' <span class="unit">· '+esc(it.hint)+'</span>':'')+'</span></label><span class="step"><button type="button" data-dec="'+id+'" aria-label="Less '+esc(it.name)+'">−</button><input type="number" min="0" inputmode="numeric" id="i_'+id+'" data-qty="'+id+'" value="0"><button type="button" data-inc="'+id+'" aria-label="More '+esc(it.name)+'">+</button></span>'+priceCell(it,'ea');
       } else if (it.kind === 'meas') {
-        ctrl = '<label class="pick" for="i_'+id+'"><span>'+esc(it.name)+'</span></label><span class="ctrl"><input class="num" type="number" min="0" step="1" inputmode="numeric" id="i_'+id+'" data-qty="'+id+'" placeholder="0"><span class="unit">'+(it.unit==='SF'?'sq ft':'ft')+'</span></span><span class="price">'+money(cents(it.price))+' <span class="unit">/'+(it.unit==='SF'?'sq ft':'ft')+'</span></span>';
+        ctrl = '<label class="pick" for="i_'+id+'"><span>'+esc(it.name)+'</span></label><span class="ctrl"><input class="num" type="number" min="0" step="1" inputmode="numeric" id="i_'+id+'" data-qty="'+id+'" placeholder="0"><span class="unit">'+(it.unit==='SF'?'sq ft':'ft')+'</span></span>'+priceCell(it,'/'+(it.unit==='SF'?'sq ft':'ft'));
       } else if (it.kind === 'tbd') {
         ctrl = '<label class="pick"><input type="checkbox" id="i_'+id+'" data-one="'+id+'"><span>'+esc(it.name)+'</span></label><span></span><span class="ctrl"><input class="num" type="number" min="0" step="0.01" inputmode="decimal" id="p_'+id+'" data-price="'+id+'" placeholder="TBD" aria-label="Price for '+esc(it.name)+'"></span>';
       }
@@ -427,7 +497,7 @@ function renderSheet(){
     '<table class="lines"><thead><tr><th class="ctlcol" style="width:88px">CTL No.</th><th>Description</th><th class="r" style="width:44px">Qty</th><th style="width:44px">Unit</th><th class="r" style="width:84px">Cost/Unit</th><th class="r" style="width:96px">Cost</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="s-total"><div class="box"><span>TOTAL</span><span>'+money(total)+'</span></div></div>'+
     (j.notes?'<div class="s-notes">'+esc(j.notes)+'</div>':'')+
-    '<div class="s-notes">Included in price: all supply and return ducting, venting for 2 bath fans, venting for 1 standard microhood cook stove. Furnace includes (1) Ecobee Lite WiFi thermostat.</div>'+
+    '<div class="s-notes">Included in price: all supply and return ducting. Furnace includes (1) Ecobee Lite WiFi thermostat.</div>'+
     '<div class="s-sign"><div>Approved by (Builder) · Date</div><div>USA Heating &amp; Cooling · Date</div></div>';
   document.getElementById('topTotal').textContent = money(total);
 }
@@ -468,6 +538,9 @@ secEl.addEventListener('click', function(e){
 });
 secEl.addEventListener('input', function(e){
   var t = e.target, d = t.dataset;
+  if (d.setprice) { var v = Number(t.value); if (t.value !== '' && isFinite(v) && v >= 0) { ITEMS[d.setprice].price = r2(v); savePrices(); update(); } return; }
+  if (d.settier) { var parts = d.settier.split(':'), o = TIERS[parts[0]].options[Number(parts[1])], v2 = Number(t.value);
+    if (t.value !== '' && isFinite(v2) && v2 > 0) { o[2] = r2(v2); document.getElementById('tier_'+parts[0]).options[Number(parts[1])+1].text = tierText(o); savePrices(); update(); } return; }
   if (d.qty) { var q = Math.max(0, Number(t.value)||0); if (q) state.sel[d.qty]=q; else delete state.sel[d.qty]; refreshRow(d.qty); update(); }
   if (d.price) {
     state.price[d.price] = t.value;
@@ -514,13 +587,54 @@ document.getElementById('stdPkg').addEventListener('click', function(){
   if (!state.sel.d_single && !state.sel.d_two) state.sel[state.sel.r_two ? 'd_two' : 'd_single'] = 1;
   syncInputs(); update(); toast('Builder Standard Package added');
 });
+document.getElementById('editPrices').addEventListener('click', function(e){
+  EDIT = !EDIT; e.currentTarget.textContent = EDIT ? 'Done editing' : 'Edit prices'; e.currentTarget.setAttribute('aria-pressed', EDIT);
+  renderSections(); syncInputs(); if (EDIT) toast('Type new prices in the red boxes');
+});
+document.getElementById('applyPct').addEventListener('click', function(){
+  var el = document.getElementById('pct'), pct = Number(el.value);
+  if (!el.value || !isFinite(pct) || pct === 0) { toast('Enter a percent first, like 3 or -2'); return; }
+  if (pct <= -100) { toast('Percent must be above -100'); return; }
+  var f = 1 + pct/100;
+  Object.keys(ITEMS).forEach(function(id){ if (ITEMS[id].price != null) ITEMS[id].price = r2(ITEMS[id].price * f); });
+  Object.keys(TIERS).forEach(function(t){ TIERS[t].options.forEach(function(o){ if (o[2] != null) o[2] = r2(o[2] * f); }); });
+  el.value = ''; savePrices(); renderSections(); syncInputs(); update();
+  toast('All prices ' + (pct > 0 ? 'raised ' : 'lowered ') + Math.abs(pct) + '%');
+});
+var resetBtn = document.getElementById('resetPrices'), confirmReset = document.getElementById('confirmReset');
+resetBtn.addEventListener('click', function(){ confirmReset.hidden = false; confirmReset.focus(); setTimeout(function(){ confirmReset.hidden = true; }, 5000); });
+confirmReset.addEventListener('click', function(){
+  applyPrices(DEFAULTS); confirmReset.hidden = true; savePrices(); renderSections(); syncInputs(); update(); toast('Standard prices restored');
+});
+document.getElementById('exportPrices').addEventListener('click', function(){
+  var data = JSON.stringify({type:'usa-builder-prices', saved:new Date().toISOString(), prices:currentPrices()}, null, 2);
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+  a.download = 'usa-builder-prices-' + today() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+});
+document.getElementById('importFile').addEventListener('change', function(e){
+  var file = e.target.files && e.target.files[0]; if (!file) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try {
+      var j = JSON.parse(rd.result), n = applyPrices(j.prices || j);
+      if (!n) throw new Error('none');
+      savePrices(); renderSections(); syncInputs(); update(); toast('Imported ' + n + ' prices');
+    } catch(err) { toast('That file is not a price list export'); }
+    e.target.value = '';
+  };
+  rd.readAsText(file);
+});
+
 var clearBtn = document.getElementById('clearAll'), confirmBtn = document.getElementById('confirmClear');
 clearBtn.addEventListener('click', function(){ confirmBtn.hidden = false; confirmBtn.focus(); setTimeout(function(){ confirmBtn.hidden = true; }, 5000); });
 confirmBtn.addEventListener('click', function(){ state = blank(); confirmBtn.hidden = true; syncInputs(); update(); toast('Cleared'); });
 document.getElementById('loadSample').addEventListener('click', function(){
   state = blank();
   state.job = {builder:'Hillcrest Builders', wo:'L25-041.08', customer:'Uselding-Brandemuehl', job:'L25-041', address:'2761 Everett Court Lot 7, Town of Ephraim', expeditor:'Keriann Wik 920-377-0520', sent:'2026-10-08', sqft:'', notes:''};
-  state.sel = {r_single:1, b_over:1, t_lite:1, m_merv10:1, m_fresh8:1, z_first:1, z_more:1, v_bath:3, v_fresh6:1, d_prot:1, d_single:1, ac_br:1};
+  state.sel = {r_single:1, b_over:1, t_lite:1, m_merv10:1, m_fresh8:1, z_first:1, z_more:1, v_fresh6:1, d_prot:1, d_single:1, ac_br:1};
   state.tiers = {furn:2, ac:3};
   state.custom = [
     {ctl:'12-150-60', desc:'Furnace by SF (Basement)', qty:'', unit:'SF', price:'1119.98'},
@@ -537,7 +651,43 @@ function doPrint(){
   setTimeout(function(){ document.title = old; }, 500);
 }
 document.getElementById('printBtn').addEventListener('click', doPrint);
-document.getElementById('printTop').addEventListener('click', doPrint);
+function pdfName(){
+  var j = state.job, base = ['Work Order', j.wo, j.customer].filter(Boolean).join(' ') || 'Work Order';
+  return base.replace(/[\\/:*?"<>|]+/g, '-').trim() + '.pdf';
+}
+var pdfBusy = false;
+function downloadPdf(){
+  if (pdfBusy) return;
+  if (!window.html2pdf) { toast('PDF maker did not load. Check your internet, or use Print.'); return; }
+  pdfBusy = true;
+  var btns = [document.getElementById('pdfBtn'), document.getElementById('pdfTop')];
+  btns.forEach(function(b){ b.disabled = true; b.textContent = 'Making PDF…'; });
+  // render a clean copy pinned to the top-left so nothing is clipped or offset
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'position:absolute;left:0;top:0;width:768px;background:#fff;z-index:-1;pointer-events:none';
+  var el = sheetEl.cloneNode(true);
+  el.removeAttribute('id'); el.classList.add('pdf');
+  el.style.cssText = 'width:768px;min-width:768px;min-height:0;box-shadow:none';
+  wrap.appendChild(el); document.body.appendChild(wrap);
+  var y = window.scrollY; window.scrollTo(0, 0);
+  html2pdf().set({
+    margin: [0.25, 0.25, 0.25, 0.25],
+    filename: pdfName(),
+    image: { type: 'jpeg', quality: 0.97 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.s-total', '.s-sign', '.s-info'] }
+  }).from(el).save().then(function(){
+    toast('PDF downloaded');
+  }, function(){
+    toast('Could not make the PDF. Try Print instead.');
+  }).then(function(){
+    wrap.remove(); window.scrollTo(0, y); pdfBusy = false;
+    btns.forEach(function(b){ b.disabled = false; b.textContent = 'Download PDF'; });
+  });
+}
+document.getElementById('pdfBtn').addEventListener('click', downloadPdf);
+document.getElementById('pdfTop').addEventListener('click', downloadPdf);
 document.getElementById('copyBtn').addEventListener('click', function(){
   var L = lines(), total = L.reduce(function(a,l){ return a+l.cost; },0);
   var rows = [['CTL No.','Description','Qty','Unit','Cost/Unit','Cost']];
@@ -556,7 +706,7 @@ function toast(m){ toastEl.textContent = m; toastEl.classList.add('show'); clear
 // expose for testing
 window.__usa = { lines: lines, getState: function(){ return state; }, setState: function(s){ state = s; } };
 
-renderSections(); syncInputs(); renderSheet();
+renderSections(); syncInputs(); renderSheet(); updatePriceStatus();
 })();
 </script>
 </body>
