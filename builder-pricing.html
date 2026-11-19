@@ -247,7 +247,6 @@ table.lines .empty td{color:var(--muted);text-align:center;padding:40px 8px;font
   <section class="out" aria-label="Work order">
     <div class="btnrow no-print">
       <button class="btn primary" type="button" id="pdfBtn">Download PDF</button>
-      <button class="btn" type="button" id="printBtn">Print</button>
       <button class="btn" type="button" id="copyBtn">Copy lines (paste into Excel)</button>
       <label class="btn" style="font-weight:600"><input type="checkbox" id="showCtl" checked style="width:18px;height:18px;accent-color:var(--red)"> Show CTL #</label>
     </div>
@@ -668,7 +667,6 @@ function doPrint(){
   window.print();
   setTimeout(function(){ document.title = old; }, 500);
 }
-document.getElementById('printBtn').addEventListener('click', doPrint);
 function pdfName(){
   var j = state.job, base = ['Work Order', j.wo, j.customer].filter(Boolean).join(' ') || 'Work Order';
   return base.replace(/[\\/:*?"<>|]+/g, '-').trim() + '.pdf';
@@ -677,7 +675,7 @@ var pdfBusy = false;
 // Render any element to a letter-size PDF download. A clean copy is pinned top-left at page width so nothing is clipped.
 function makePdf(el, filename, btns, label, avoid){
   if (pdfBusy) return;
-  if (!window.html2pdf) { toast('PDF maker did not load. Check your internet, or use Print.'); return; }
+  if (!window.html2pdf) { toast('PDF maker did not load. Check your internet and try again.'); return; }
   pdfBusy = true;
   btns.forEach(function(b){ b.disabled = true; b.textContent = 'Making PDF…'; });
   var wrap = document.createElement('div');
@@ -694,7 +692,7 @@ function makePdf(el, filename, btns, label, avoid){
   }).from(el).save().then(function(){
     toast('PDF downloaded');
   }, function(){
-    toast('Could not make the PDF. Try again, or use Print.');
+    toast('Could not make the PDF. Please try again.');
   }).then(function(){
     wrap.remove(); window.scrollTo(0, y); pdfBusy = false;
     btns.forEach(function(b){ b.disabled = false; b.textContent = label; });
@@ -771,6 +769,23 @@ window.__usa = { lines: lines, getState: function(){ return state; }, setState: 
 
 renderSections(); syncInputs(); renderSheet(); updatePriceStatus();
 })();
+
+// Number boxes: clear a 0 when you tap in so typing doesn't end up after it ("0150").
+// If you leave the box empty, the 0 comes back.
+document.addEventListener('focusin', function(e){
+  var el = e.target;
+  if(!el || el.tagName !== 'INPUT' || el.type !== 'number') return;
+  if(!el.hasAttribute('inputmode')) el.setAttribute('inputmode', 'decimal');
+  if(el.value !== '' && parseFloat(el.value) === 0){ el.value = ''; el.dataset.zeroCleared = '1'; }
+});
+document.addEventListener('focusout', function(e){
+  var el = e.target;
+  if(!el || el.tagName !== 'INPUT' || el.type !== 'number') return;
+  if(el.dataset.zeroCleared === '1'){
+    delete el.dataset.zeroCleared;
+    if(el.value === ''){ el.value = '0'; }
+  }
+});
 </script>
 </body>
 </html>
