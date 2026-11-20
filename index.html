@@ -357,7 +357,10 @@
   .gbb-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
   .gbb-grid.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
   .gbb-card{position:relative; border:1px solid var(--line); border-radius:8px; padding:14px 12px 12px; display:flex; flex-direction:column; background:#fff;}
-  .gbb-card.rec{border:2px solid var(--navy); box-shadow:0 2px 10px rgba(22,48,94,.12);}
+  .gbb-card.rec{border:2px solid #d4a017; background:linear-gradient(180deg,#fff8e1 0%,#ffffff 55%); box-shadow:0 0 0 3px rgba(212,160,23,.20), 0 4px 14px rgba(22,48,94,.10);}
+  .gbb-card.rec .gbb-name .rec-star{color:#d4a017;}
+  .gbb-card.rec .gbb-price{color:var(--red);}
+  .q-warranty{margin-top:10px; font-size:11.5px; background:#f3f5f9; border-radius:6px; padding:7px 10px; display:inline-block;}
   .gbb-ribbon{position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--red); color:#fff; font-size:9px; font-weight:800; letter-spacing:.08em; padding:2px 9px; border-radius:10px; white-space:nowrap;}
   .gbb-tier{font-size:10px; font-weight:800; letter-spacing:.08em; color:var(--red); text-transform:uppercase; text-align:center;}
   .gbb-name{font-size:15px; font-weight:800; color:var(--navy); text-align:center; margin-top:2px; line-height:1.2;}
@@ -798,6 +801,11 @@
         </div>
       </div>
 
+      <div class="card" id="singleWarrantyCard">
+        <div class="card-h">Warranty</div>
+        <input type="text" id="quoteWarranty" oninput="render()" placeholder="e.g. 10-yr parts · 1-yr labor">
+      </div>
+
       <div class="card">
         <div class="card-h">Optional Add-Ons <span class="card-hs">(not included in the price)</span></div>
         <div class="tier-note" id="tierNoteAddons"></div>
@@ -1217,6 +1225,11 @@ function setJobType(t){
   document.getElementById('includeTax').checked = (t !== 'install');
   // Truck/dispatch charges are no longer quoted
   document.getElementById('truckCharge').value = 0;
+  // Installs start at the standard 16 labor hours; switching back to service clears that default
+  const lh = document.getElementById('laborHours');
+  const h = parseFloat(lh.value)||0;
+  if(t === 'install' && h === 0) lh.value = STD_INSTALL_HOURS;
+  if(t === 'service' && h === STD_INSTALL_HOURS) lh.value = 0;
   updateToggleLabels();
   render();
 }
@@ -1651,6 +1664,17 @@ let recommendedTier = 1;
 let chosenTier = -1;       // -1 = customer hasn't chosen yet
 let tierLoading = false;
 const TIER_DEFAULT_NAMES = ['Standard','Recommended','Premium','Premium Plus'];
+// Company standards for new quotes
+const STD_WARRANTY = '10-yr parts · 1-yr labor';
+const STD_INSTALL_HOURS = 16;
+const STD_MISC_BY_TIER = [500, 700, 950, 950];   // Standard, Recommended, Premium, Premium Plus
+const MISC_DESC = 'Miscellaneous materials';
+function setTierMisc(parts, idx){
+  const amt = STD_MISC_BY_TIER[Math.min(idx, STD_MISC_BY_TIER.length-1)];
+  const out = (parts||[]).filter(p => !/^\s*misc/i.test(p.desc||''));
+  out.push({qty:'1', desc:MISC_DESC, cost:String(amt), markup:'0'});
+  return out;
+}
 const MAX_TIERS = 4, MIN_TIERS = 2;
 
 function readEditorParts(){
@@ -1692,21 +1716,21 @@ const GBB_TEXT_KEY = 'usahc_option_defaults_v2';
 const GBB_TEXT_BUILTIN = [
   {name:'Standard', headline:'Standard Efficiency System',
    description:'Reliable, budget-friendly replacement that meets current efficiency standards.',
-   features:'Single-stage heating & cooling\nStandard thermostat\nDependable, proven equipment', warranty:''},
+   features:'Single-stage heating & cooling\nStandard thermostat\nDependable, proven equipment', warranty:STD_WARRANTY},
   {name:'Recommended', headline:'High Efficiency System',
    description:'Our most popular choice: quieter, more even comfort and lower energy bills.',
-   features:'Two-stage heating & cooling\nVariable-speed blower\nSmart Wi-Fi thermostat\nLower monthly energy bills', warranty:''},
+   features:'Two-stage heating & cooling\nVariable-speed blower\nSmart Wi-Fi thermostat\nLower monthly energy bills', warranty:STD_WARRANTY},
   {name:'Premium', headline:'Premium Variable-Speed System',
    description:'Top-of-the-line comfort and efficiency with the quietest operation.',
-   features:'Modulating / variable-speed operation\nQuietest, most even comfort\nBest humidity control\nLowest operating costs', warranty:''},
+   features:'Modulating / variable-speed operation\nQuietest, most even comfort\nBest humidity control\nLowest operating costs', warranty:STD_WARRANTY},
   {name:'Premium Plus', headline:'Premium System + Indoor Air Quality',
    description:'Everything in Premium, plus whole-home air quality upgrades.',
-   features:'Everything in Premium\nWhole-home air purification\nHumidity control\nHighest comfort and efficiency', warranty:''},
+   features:'Everything in Premium\nWhole-home air purification\nHumidity control\nHighest comfort and efficiency', warranty:STD_WARRANTY},
 ];
 function gbbTextDefaults(){
   let saved = null;
   try{ saved = JSON.parse(localStorage.getItem(GBB_TEXT_KEY) || 'null'); }catch(e){}
-  return GBB_TEXT_BUILTIN.map((d,i)=> Object.assign({}, d, (saved && saved[i]) || {}));
+  return GBB_TEXT_BUILTIN.map((d,i)=>{ const m = Object.assign({}, d, (saved && saved[i]) || {}); if(!m.warranty) m.warranty = d.warranty; return m; });
 }
 function saveTierTextDefaults(){
   const cur = gbbTextDefaults();
@@ -1737,7 +1761,7 @@ function setQuoteStyle(style){
       const parts = readEditorParts();
       const hrs = document.getElementById('laborHours').value;
       const addons = readEditorAddons();
-      tiers = [0,1,2].map(i=>makeTier(i, parts, hrs, addons));
+      tiers = [0,1,2].map(i=>{ const t = makeTier(i, parts, hrs, addons); t.parts = setTierMisc(t.parts, i); return t; });
       recommendedTier = 1; chosenTier = -1; activeTier = 0;
     }
     quoteStyle = 'gbb';
@@ -1761,7 +1785,7 @@ function addTier(){
   if(tiers.length >= MAX_TIERS) return;
   readEditorIntoTier(activeTier);
   const src = tiers[tiers.length-1];
-  tiers.push(makeTier(tiers.length, src.parts, src.laborHours, src.addons));
+  const nt = makeTier(tiers.length, src.parts, src.laborHours, src.addons); nt.parts = setTierMisc(nt.parts, tiers.length); tiers.push(nt);
   activeTier = tiers.length-1;
   loadTierIntoEditor(activeTier);
   updateGbbUI(); render();
@@ -1781,7 +1805,7 @@ function copyTierToOthers(){
   if(!confirm('Replace the parts, labor hours and add-ons on every other option with this one\'s?')) return;
   readEditorIntoTier(activeTier);
   const src = tiers[activeTier];
-  tiers.forEach((t,i)=>{ if(i!==activeTier){ t.parts = JSON.parse(JSON.stringify(src.parts)); t.laborHours = src.laborHours; t.addons = JSON.parse(JSON.stringify(src.addons||[])); }});
+  tiers.forEach((t,i)=>{ if(i!==activeTier){ t.parts = setTierMisc(JSON.parse(JSON.stringify(src.parts)), i); t.laborHours = src.laborHours; t.addons = JSON.parse(JSON.stringify(src.addons||[])); }});
   updateGbbUI(); render();
 }
 function tierFieldEdited(){
@@ -1808,6 +1832,7 @@ function updateGbbUI(){
   document.getElementById('btnStyleGbb').classList.toggle('active', on);
   document.getElementById('gbbWrap').style.display = on ? 'block' : 'none';
   document.getElementById('detailModeWrap').style.display = on ? 'none' : 'block';
+  document.getElementById('singleWarrantyCard').style.display = on ? 'none' : 'block';
   updateStepHints();
   if(!on) return;
   const st = collectFormStateRaw();
@@ -1879,9 +1904,9 @@ function renderGbbSection(st){
     if(b.discount) subBits.push('Includes ' + money(b.discount) + ' discount');
     subBits.push('Sales tax ' + money(b.tax));
     return `<div class="gbb-card ${rec?'rec':''}">
-      ${(rec && !/^\s*recommended\s*$/i.test(t.name||'')) ? '<div class="gbb-ribbon">RECOMMENDED</div>' : ''}
+      ${rec ? '<div class="gbb-ribbon">★ OUR RECOMMENDATION</div>' : ''}
       <div class="gbb-tier">Option ${i+1}</div>
-      <div class="gbb-name">${esc(t.name)||'&nbsp;'}</div>
+      <div class="gbb-name">${rec ? '<span class="rec-star">★</span> ' : ''}${esc(t.name)||'&nbsp;'}</div>
       <div class="gbb-head">${esc(t.headline)}</div>
       ${t.description ? `<div class="gbb-desc">${esc(t.description)}</div>` : ''}
       <div class="gbb-price">${money(b.total)}</div>
@@ -2021,6 +2046,7 @@ function render(){
     ${includeTax
       ? `<div class="tax-note">Tax applied per Wisconsin requirements. Final amount may vary if site conditions differ from those described.</div>`
       : `<div class="tax-note">Sales tax not applied to this quote (real property improvement / new construction).</div>`}
+    ${document.getElementById('quoteWarranty').value.trim() ? `<div class="q-warranty"><b>Warranty:</b> ${esc(document.getElementById('quoteWarranty').value.trim())}</div>` : ''}
   `;
 
   document.getElementById('sheet').innerHTML = `
@@ -2132,6 +2158,7 @@ function collectFormStateRaw(){
     detailMode,
     partsSummary: document.getElementById('partsSummary').value,
     fullSummaryText: document.getElementById('fullSummaryText').value,
+    quoteWarranty: document.getElementById('quoteWarranty').value,
     parts: partRows,
     opts: optRows,
     quoteStyle,
@@ -2177,6 +2204,7 @@ function restoreFormState(q){
   document.getElementById('discount').step = discountType==='percent' ? '0.1' : '1';
   if(q.partsSummary) document.getElementById('partsSummary').value = q.partsSummary;
   document.getElementById('fullSummaryText').value = q.fullSummaryText || '';
+  document.getElementById('quoteWarranty').value = q.quoteWarranty || '';
   // Back-compat: older saved quotes used itemizeParts (bool) instead of detailMode
   let mode = q.detailMode;
   if(!mode) mode = (q.itemizeParts===false) ? 'partsSummary' : 'itemized';
@@ -2385,7 +2413,8 @@ function newQuote(){
   document.getElementById('custCity').value='';
   document.getElementById('preparedBy').value='';
   document.getElementById('scope').value='';
-  document.getElementById('laborHours').value=0;
+  document.getElementById('laborHours').value = (jobType === 'install') ? STD_INSTALL_HOURS : 0;
+  document.getElementById('quoteWarranty').value = STD_WARRANTY;
   document.getElementById('truckCharge').value = 0;
   document.getElementById('discount').value=0;
   discountType = 'flat';
@@ -2641,7 +2670,8 @@ function downloadTemplateDocx(){
 document.getElementById('homeLogo').src = document.querySelector('.brandbar img').src;
 populateCountyDropdown();
 loadSettings();
-setJobType('install'); // normalize defaults: install rates, no tax
+setJobType('install'); // normalize defaults: install rates, no tax, 16 labor hrs
+document.getElementById('quoteWarranty').value = STD_WARRANTY;
 addPart('', 0, 50, 1);
 renderQuotesList();
 renderTemplateList();
