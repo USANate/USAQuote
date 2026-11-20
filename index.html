@@ -787,6 +787,15 @@
       <div class="card">
         <div class="card-h">Parts &amp; Equipment</div>
         <div class="tier-note" id="tierNoteParts"></div>
+        <div class="quick-add">
+          <select id="equipFurnace" aria-label="Add a furnace"></select>
+          <button class="add-part" style="margin:0; width:auto; padding:9px 14px;" onclick="addEquipFurnace()">Add</button>
+        </div>
+        <div class="quick-add">
+          <select id="equipAC" aria-label="Add an AC and matching coil"></select>
+          <button class="add-part" style="margin:0; width:auto; padding:9px 14px;" onclick="addEquipAC()">Add</button>
+        </div>
+        <div class="gbb-hint" id="equipNote" style="margin-bottom:8px;">Equipment is added at cost and marked up with the company markup table. Picking a new furnace or AC replaces the one already on this option, and the coil is matched to the furnace's cabinet width.</div>
         <table class="parts" id="partsTable">
           <thead><tr><th>Qty</th><th>Description</th><th>Cost $</th><th>Markup %</th><th>Amt</th><th></th></tr></thead>
           <tbody id="partsBody"></tbody>
@@ -1605,6 +1614,213 @@ function esc(s){
 
 
 
+// ================= EQUIPMENT PRICE BOOK (Johnstone Supply cost sheets, ©Johnstone 05-2025) =================
+// Furnaces and AC + matching coil, added as part lines at cost so the company markup table applies.
+const EQUIP_PRICE_SOURCE = 'Coleman & Evcon: Johnstone Supply equipment sheets (©05-2025) · Lennox: USA Heating proposed replacement pricing';
+const EQUIP_FURNACES = [
+  // brand, series label, js#, mfg#, btu in, cost
+  ['Coleman','Z8ES 80% AFUE single-stage', [
+    ['L61-860','Z8ES040A12SMPS1',40000,938.85],['L61-861','Z8ES060A12SMPS1',60000,968.71],['L61-862','Z8ES080B12SMPS1',80000,1018.44],
+    ['L61-863','Z8ES080C16SMPS1',80000,1054.78],['L61-864','Z8ES080C20SMPS1',80000,1073.14],['L61-865','Z8ES100B12SMPS1',100000,1086.16],
+    ['L61-866','Z8ES100C16SMPS1',100000,1091.51],['L61-867','Z8ES100C20SMPS1',100000,1127.86],['L61-868','Z8ES120C16SMPS1',120000,1184.10],
+    ['L61-869','Z8ES120C20SMPS1',120000,1208.96],['L61-870','Z8ES130D20SMPS1',130000,1239.19]]],
+  ['Coleman','Z8ET 80% AFUE two-stage', [
+    ['L61-968','Z8ET060A12LMPS1',60000,1103.58],['L61-969','Z8ET080B12LMPS1',80000,1157.84],['L61-970','Z8ET080C16LMPS1',80000,1203.43],
+    ['L61-971','Z8ET100C16LMPS1',100000,1241.88],['L61-972','Z8ET100C20LMPS1',100000,1287.47],['L61-973','Z8ET120C20LMPS1',120000,1376.76]]],
+  ['Coleman','Z9ES 96% AFUE single-stage', [
+    ['L62-636','Z9ES026A08SMPS1',26000,1218.44],['L62-637','Z9ES040A10SMPS1',40000,1408.33],['L62-638','Z9ES060A10SMPS1',60000,1451.63],
+    ['L62-639','Z9ES060B12SMPS1',60000,1488.39],['L62-640','Z9ES080B12SMPS1',80000,1524.26],['L62-641','Z9ES080C16SMPS1',80000,1721.57],
+    ['L62-642','Z9ES080C20SMPS1',80000,1766.20],['L62-643','Z9ES100C16SMPS1',100000,1801.63],['L62-644','Z9ES100C20SMPS1',100000,1874.70],
+    ['L62-645','Z9ES120D20SMPS1',120000,1932.01]]],
+  ['Coleman','Z9ET 97% AFUE two-stage', [
+    ['L63-368','Z9ET040A10SMPS1',40000,1526.77],['L63-369','Z9ET060B12SMPS1',60000,1605.11],['L63-370','Z9ET080B12SMPS1',80000,1689.76],
+    ['L63-371','Z9ET080C16SMPS1',80000,1751.67],['L63-372','Z9ET100C16SMPS1',100000,1797.14],['L63-373','Z9ET100C20SMPS1',100000,1887.04],
+    ['L63-374','Z9ET120D20SMPS1',120000,1954.88]]],
+  ['Coleman','TM9V 96% AFUE two-stage', [
+    ['L94-024','TM9V040A10MP12C',40000,1664.56],['L94-025','TM9V060B12MP12C',60000,1785.95],['L94-026','TM9V080B12MP12C',80000,1876.90],
+    ['L94-027','TM9V080C16MP12C',80000,1928.47],['L94-028','TM9V100C16MP12C',100000,2037.09],['L94-029','TM9V100C20MP12C',100000,2067.51],
+    ['L94-030','TM9V120D20MP12C',120000,2271.46]]],
+  ['Coleman','CP9C 98% AFUE modulating', [
+    ['L94-012','CP9C060B12MP13C',60000,2569.88],['L94-014','CP9C080C16MP13C',80000,2717.93],['L94-015','CP9C100C16MP13C',100000,2813.11],
+    ['L94-016','CP9C100C20MP13C',120000,2860.71],['L94-017','CP9C120C20MP13C',120000,2960.75]]],
+  ['Lennox','Merit ML196 96% AFUE single-stage', [
+    ['26N99','ML196UH045XE36BK',45000,1094],['26P11','ML196UH070XE36BK',70000,1148],['26P49','ML196UH070XE48BK',70000,1179],
+    ['26P50','ML196UH090XE36CK',90000,1202],['26P24','ML196UH090XE48CK',90000,1220],['26P56','ML196UH090XE60CK',90000,1254],
+    ['26P32','ML196UH110XE60CK',110000,1296],['26P57','ML196UH135XE60DK',135000,1360]]],
+  ['Lennox','Elite EL297 97% AFUE two-stage variable-speed', [
+    ['26K66','EL297UH045XV36BK',45000,1654],['26K67','EL297UH070XV36BK',70000,1660],['26K71','EL297UH090XV36CK',90000,1841],
+    ['26K98','EL297UH090XV48CK',90000,1893],['26M75','EL297UH090XV60CK',90000,1936],['26K99','EL297UH110XV48CK',110000,1990],
+    ['26L13','EL297UH110XV60CK',110000,1944]]],
+  ['Lennox','Signature SLP99 99% AFUE modulating variable-speed', [
+    ['26J92','SLP99UH070XV36BK',70000,1928],['26J91','SLP99UH090XV36CK',90000,1989],['26J74','SLP99UH090XV48CK',90000,2030],
+    ['26J73','SLP99UH090XV60CK',90000,2131],['26J71','SLP99UH110XV60CK',110000,2212],['26J70','SLP99UH135XV60DK',135000,2334]]],
+  ['Evcon','RG19 96% AFUE single-stage', [
+    ['L62-698','RG19026A08MPS1',26000,928.44],['L62-699','RG19040A10MPS1',40000,1050.61],['L62-700','RG19060A10MPS1',60000,1081.97],
+    ['L62-701','RG19060B12MPS1',60000,1119.90],['L62-702','RG19080B12MPS1',80000,1150.53],['L62-703','RG19080C16MPS1',80000,1296.03],
+    ['L62-704','RG19080C20MPS1',80000,1326.30],['L62-705','RG19100C16MPS1',100000,1350.72],['L62-706','RG19100C20MPS1',100000,1407.61],
+    ['L62-707','RG19120D20MPS1',120000,1457.58]]],
+];
+const EQUIP_ACS = [
+  // brand, series label, [js#, mfg#, btu, cost]
+  ['Coleman','XC3 13.4 SEER2 single-stage', [
+    ['B68-194','XC318E2S11',18000,1248.82],['B68-195','XC324E2S11',24000,1417.04],['B68-196','XC330E2S11',30000,1538.47],
+    ['B68-197','XC336E2S11',36000,1723.95],['B68-198','XC342E2S11',42000,1941.73],['B68-199','XC348E2S11',48000,2176.25],
+    ['B68-200','XC360E2S11',60000,2458.65]]],
+  ['Coleman','XC4 14.2 SEER2 single-stage', [
+    ['B68-201','XC418E2S11',18000,1593.59],['B68-202','XC424E2S11',24000,1661.95],['B68-203','XC430E2S11',30000,1792.01],
+    ['B68-204','XC436E2S11',36000,1996.57],['B68-205','XC442E2S11',42000,2232.79],['B68-206','XC448E2S11',48000,2527.94],
+    ['B68-207','XC460E2S11',60000,2897.57]]],
+  ['Coleman','XC6 16 SEER2 two-stage', [
+    ['B50-112','XC618E2S11',18000,1838.17],['B50-113','XC624E2S11',24000,1930.37],['B50-114','XC636E2S11',36000,2317.44],
+    ['B50-115','XC648E2S11',48000,3018.69],['B50-116','XC660E2S11',60000,3248.39]]],
+  ['Lennox','Merit ML13KC1 single-stage', [
+    ['25C62','ML13KC1-018',18000,1156],['25C64','ML13KC1-024',24000,1250],['25C67','ML13KC1-030',30000,1400],
+    ['25C68','ML13KC1-036',36000,1490],['25C69','ML13KC1-042',42000,1664],['25C72','ML13KC1-048',48000,1748],
+    ['25C73','ML13KC1-060',60000,1998]]],
+  ['Lennox','Merit ML17KC2 two-stage', [
+    ['25U62','ML17KC2-024-230',24000,1767],['25U63','ML17KC2-036-230',36000,1793],['25U64','ML17KC2-048-230',48000,2293],
+    ['25U65','ML17KC2-060-230',60000,2561]]],
+  ['Lennox','Elite EL15KC1 single-stage', [
+    ['25C74','EL15KC1-018',18000,1958],['25C75','EL15KC1-024',24000,2021],['25C76','EL15KC1-030',30000,2064],
+    ['25C77','EL15KC1-036',36000,2128],['25C78','EL15KC1-042',42000,2468],['25C79','EL15KC1-048',48000,2596],
+    ['25C80','EL15KC1-060',60000,2977]]],
+  ['Evcon','RC3 13.4 SEER2 single-stage', [
+    ['B68-254','RC318E2S11',18000,903.55],['B68-255','RC324E2S11',24000,1025.15],['B68-256','RC330E2S11',30000,1113.32],
+    ['B68-257','RC336E2S11',36000,1247.02],['B68-258','RC342E2S11',42000,1404.48],['B68-259','RC348E2S11',48000,1575.01],
+    ['B68-260','RC360E2S11',60000,1778.49]]],
+  ['Evcon','RC4 14.3 SEER2 single-stage', [
+    ['B68-261','RC418E2S11',18000,1082.33],['B68-262','RC424E2S11',24000,1169.49],['B68-263','RC430E2S11',30000,1261.66],
+    ['B68-264','RC436E2S11',36000,1405.56],['B68-265','RC442E2S11',42000,1570.82],['B68-266','RC448E2S11',48000,1779.20],
+    ['B68-267','RC460E2S11',60000,2039.34]]],
+];
+// CTF cased up/downflow coils with TXV, by tonnage (btu/1000) and cabinet width letter (A 14.5", B 17.5", C 21", D 24.5")
+// Each brand's sheet lists its own coil price.
+const EQUIP_COILS = {
+  Coleman: {
+    18:{A:['B68-219','CTF18A5AAS1',580.38],B:['B68-220','CTF18B5AAS1',580.38]},
+    24:{A:['B68-221','CTF24A5ABS1',635.82],B:['B68-222','CTF24B5ABS1',664.11]},
+    30:{A:['B68-223','CTF30A5ADS1',762.87],B:['B68-224','CTF30B5ACS1',723.59],C:['B68-225','CTF30C5ACS1',722.44]},
+    36:{B:['B68-226','CTF36B5ADS1',761.70],C:['B68-230','CTF36C5CDS1',774.42]},
+    42:{C:['B68-231','CTF42C5CES1',803.29]},
+    48:{C:['B68-232','CTF48C5CFS1',898.57],D:['B68-233','CTF48D5CFS1',940.72]},
+    60:{C:['B68-234','CTF60C5CGS1',977.10],D:['B68-236','CTF60D5CGS1',1011.75]},
+  },
+  Evcon: {
+    18:{A:['B68-219','CTF18A5AAS1',594.89],B:['B68-220','CTF18B5AAS1',594.89]},
+    24:{A:['B68-221','CTF24A5ABS1',651.72],B:['B68-222','CTF24B5ABS1',680.72]},
+    30:{A:['B68-223','CTF30A5ADS1',781.94],B:['B68-224','CTF30B5ACS1',741.68],C:['B68-225','CTF30C5ACS1',740.50]},
+    36:{B:['B68-226','CTF36B5ADS1',780.74],C:['B68-230','CTF36C5CDS1',793.78]},
+    42:{C:['B68-231','CTF42C5CES1',823.37]},
+    48:{C:['B68-232','CTF48C5CFS1',921.03],D:['B68-233','CTF48D5CFS1',964.24]},
+    60:{C:['B68-234','CTF60C5CGS1',1001.53],D:['B68-236','CTF60D5CGS1',1037.04]},
+  },
+};
+// Lennox CK40CT cased coils (no 3.5-ton coil listed; 3.5 ton uses the 4-ton coil)
+EQUIP_COILS.Lennox = {
+  18:{A:['25U70','CK40CT-18/24A',383],B:['25U71','CK40CT-18/24B',397]},
+  24:{A:['25U72','CK40CT-24A',401],B:['25U73','CK40CT-24B',411]},
+  30:{A:['25U74','CK40CT-30A',420],B:['25U75','CK40CT-30B',430]},
+  36:{A:['25U79','CK40CT-36A',477],B:['25U80','CK40CT-36B',487],C:['30L01','CK40CT-36C-71',459]},
+  42:{B:['25U81','CK40CT-48B',496],C:['25U82','CK40CT-48C',506]},
+  48:{B:['25U81','CK40CT-48B',496],C:['25U82','CK40CT-48C',506]},
+  60:{C:['25U85','CK40CT-60C',563],D:['25U86','CK40CT-60D',600]},
+};
+const COIL_DEFAULT_WIDTH = {18:'B',24:'B',30:'B',36:'B',42:'C',48:'C',60:'C'};
+const WIDTH_ORDER = ['A','B','C','D'];
+
+function tonLabel(btu){ const t = btu/12000; return (Number.isInteger(t) ? t : t.toFixed(1)) + ' ton'; }
+function furnaceWidthLetter(mfg){
+  const s = String(mfg);
+  const m = s.match(/\d{3}([A-D])\d/) || s.match(/([A-D])K$/);   // Coleman/Evcon …080B12… · Lennox …36BK
+  return m ? m[1] : '';
+}
+function pickCoil(brand, tons, width){
+  const book = EQUIP_COILS[brand] || EQUIP_COILS.Coleman;
+  const row = book[tons]; if(!row) return null;
+  let w = (width && row[width]) ? width : null;
+  if(!w){
+    const want = WIDTH_ORDER.indexOf(width || COIL_DEFAULT_WIDTH[tons] || 'B');
+    w = Object.keys(row).sort((a,b)=>Math.abs(WIDTH_ORDER.indexOf(a)-want)-Math.abs(WIDTH_ORDER.indexOf(b)-want))[0];
+  }
+  const c = row[w];
+  return {js:c[0], mfg:c[1], cost:c[2], width:w};
+}
+function furnaceDesc(brand, series, u){ return `${brand} ${series} gas furnace, ${u[2].toLocaleString()} BTU (${u[1]})`; }
+function acDesc(brand, series, u){ return `${brand} ${series} air conditioner, ${tonLabel(u[2])} (${u[1]})`; }
+function coilDesc(brand, tons, c){ return `${brand} matching cased coil w/ TXV, ${tonLabel(tons*1000)} (${c.mfg})`; }
+
+function equipBrandOrder(){
+  const t = (quoteStyle === 'gbb' && tiers[activeTier]) ? (tiers[activeTier].name||'') : '';
+  return /premium/i.test(t) ? ['Lennox','Coleman','Evcon'] : ['Coleman','Evcon','Lennox'];
+}
+function populateEquipPickers(){
+  const f = document.getElementById('equipFurnace'), a = document.getElementById('equipAC');
+  if(!f || !a) return;
+  const order = equipBrandOrder();
+  const byBrand = (list)=> list.map((s,si)=>({s,si})).sort((x,y)=>order.indexOf(x.s[0])-order.indexOf(y.s[0]));
+  let fh = '<option value="">Add a furnace…</option>';
+  byBrand(EQUIP_FURNACES).forEach(({s,si})=>{
+    fh += `<optgroup label="${esc(s[0]+' '+s[1])}">` + s[2].map((u,ui)=>`<option value="${si}:${ui}">${(u[2]/1000)}K BTU · ${u[1]} — cost ${money(u[3])}</option>`).join('') + '</optgroup>';
+  });
+  let ah = '<option value="">Add an AC + matching coil…</option>';
+  byBrand(EQUIP_ACS).forEach(({s,si})=>{
+    ah += `<optgroup label="${esc(s[0]+' '+s[1])}">` + s[2].map((u,ui)=>{
+      const c = pickCoil(s[0], u[2]/1000, '');
+      return `<option value="${si}:${ui}">${tonLabel(u[2])} · ${u[1]} + coil — cost ${money(u[3] + (c ? c.cost : 0))}</option>`;
+    }).join('') + '</optgroup>';
+  });
+  f.innerHTML = fh; a.innerHTML = ah;
+}
+function clearEmptyPartRows(){
+  [...document.querySelectorAll('#partsBody tr')].forEach(tr=>{
+    const ins = tr.querySelectorAll('input');
+    if(!ins[1].value.trim() && !(parseFloat(ins[2].value) > 0)) tr.remove();
+  });
+}
+function findPartRows(re){
+  return [...document.querySelectorAll('#partsBody tr')].filter(tr=>re.test(tr.querySelectorAll('input')[1].value));
+}
+function currentFurnaceWidth(){
+  const r = findPartRows(/gas furnace/i)[0]; if(!r) return '';
+  const m = r.querySelectorAll('input')[1].value.match(/\(([^)]+)\)\s*$/);
+  return m ? furnaceWidthLetter(m[1]) : '';
+}
+function setPartRow(tr, desc, cost){
+  const ins = tr.querySelectorAll('input');
+  ins[1].value = desc; ins[2].value = cost;
+  if(document.getElementById('autoMarkup').checked) ins[3].value = tierMarkupPct(cost);
+}
+function addOrReplacePart(re, desc, cost){
+  const existing = findPartRows(re)[0];
+  if(existing){ setPartRow(existing, desc, cost); return; }
+  addPart(desc, cost, null, 1);
+}
+function addEquipFurnace(){
+  const sel = document.getElementById('equipFurnace'); if(!sel.value) return;
+  const [si,ui] = sel.value.split(':').map(Number);
+  const s = EQUIP_FURNACES[si], u = s[2][ui];
+  clearEmptyPartRows();
+  addOrReplacePart(/gas furnace/i, furnaceDesc(s[0], s[1], u), u[3]);
+  // re-match an existing coil to this furnace's cabinet width
+  const coilRow = findPartRows(/matching cased coil/i)[0];
+  if(coilRow){
+    const d = coilRow.querySelectorAll('input')[1].value;
+    const m = d.match(/^(\w+) .*?(?:CTF|CK40CT-)(\d\d)/);
+    if(m){ const c = pickCoil(m[1], +m[2], furnaceWidthLetter(u[1])); if(c) setPartRow(coilRow, coilDesc(m[1], +m[2], c), c.cost); }
+  }
+  sel.value = ''; render();
+}
+function addEquipAC(){
+  const sel = document.getElementById('equipAC'); if(!sel.value) return;
+  const [si,ui] = sel.value.split(':').map(Number);
+  const s = EQUIP_ACS[si], u = s[2][ui], tons = u[2]/1000;
+  const c = pickCoil(s[0], tons, currentFurnaceWidth());
+  clearEmptyPartRows();
+  addOrReplacePart(/air conditioner/i, acDesc(s[0], s[1], u), u[3]);
+  if(c) addOrReplacePart(/matching cased coil/i, coilDesc(s[0], tons, c), c.cost);
+  sel.value = ''; render();
+}
+
 // ================= ADD-ON PRESETS (Johnstone De Pere #634 cost, Nov 20 2026) =================
 // Installed price = cost marked up with the company parts table + install labor at the
 // residential install rate + install materials. Prices follow the markup table and labor rate.
@@ -1896,6 +2112,7 @@ function updateGbbUI(){
   document.getElementById('detailModeWrap').style.display = on ? 'none' : 'block';
   document.getElementById('singleWarrantyCard').style.display = on ? 'none' : 'block';
   document.getElementById('addonAllWrap').style.display = on ? 'flex' : 'none';
+  populateEquipPickers();
   updateStepHints();
   if(!on) return;
   const st = collectFormStateRaw();
@@ -2740,6 +2957,7 @@ renderQuotesList();
 renderTemplateList();
 render();
 populateAddonPresets();
+populateEquipPickers();
 goStep(1);
 updateStepHints();
 showView('home');
