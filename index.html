@@ -323,6 +323,8 @@
   .review-total .rt-v{font-size:32px; font-weight:800; color:var(--navy); margin-top:2px;}
   .review-total .rt-s{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.6;}
   .mode-hint{font-size:11.5px; color:var(--muted); margin-top:8px;}
+  .quick-add{display:flex; gap:8px; margin:2px 0 4px;}
+  .quick-add select{flex:1; min-width:0;}
   .county-note{font-size:11.5px; color:#264a7a; background:#eef4ff; border:1px solid #cfe0ff; border-radius:6px; padding:6px 9px; margin-top:6px; line-height:1.4;}
   .btn-primary.big{padding:15px; font-size:16px; border-radius:10px; margin-bottom:14px;}
   .step-nav{display:flex; align-items:center; gap:10px;}
@@ -809,6 +811,15 @@
       <div class="card">
         <div class="card-h">Optional Add-Ons <span class="card-hs">(not included in the price)</span></div>
         <div class="tier-note" id="tierNoteAddons"></div>
+        <div class="quick-add">
+          <select id="addonPreset" aria-label="Quick add an add-on"></select>
+          <button class="add-part" style="margin:0; width:auto; padding:9px 14px;" onclick="quickAddAddon()">Add</button>
+        </div>
+        <div class="check-row" id="addonAllWrap" style="display:none; margin-top:6px;">
+          <input type="checkbox" id="addonAllOptions" checked>
+          <label style="margin:0;">Add to every option</label>
+        </div>
+        <div class="gbb-hint" id="addonPresetNote"></div>
         <div id="optsBody"></div>
         <button class="add-part" onclick="addOption()">+ Add Add-On</button>
       </div>
@@ -1206,6 +1217,7 @@ function setCustType(type){
 function updateToggleLabels(){
   document.getElementById('btnResRate').textContent = '$' + rateStore[jobType].res;
   document.getElementById('btnComRate').textContent = '$' + rateStore[jobType].com;
+  try{ populateAddonPresets(); }catch(e){}
 }
 
 let jobType = 'install'; // 'service' | 'install'
@@ -1592,6 +1604,56 @@ function esc(s){
 
 
 
+
+// ================= ADD-ON PRESETS (Johnstone De Pere #634 cost, Nov 20 2026) =================
+// Installed price = cost marked up with the company parts table + install labor at the
+// residential install rate + install materials. Prices follow the markup table and labor rate.
+const ADDON_PRICE_DATE = 'Nov 20, 2026';
+const ADDON_PRESETS = [
+  {group:'Humidifiers', name:'AprilAire 600 Whole-Home Humidifier (bypass, automatic)', part:'Johnstone B84-265', cost:310.93, hrs:3, mat:75},
+  {group:'Humidifiers', name:'AprilAire 700 Whole-Home Humidifier (fan-powered, automatic)', part:'Johnstone B84-260', cost:480.68, hrs:3, mat:75},
+  {group:'Humidifiers', name:'AprilAire 800 Steam Humidifier', part:'Johnstone B85-854', cost:991.17, hrs:5, mat:150},
+  {group:'UV Lights', name:'Fresh-Aire Blue-Tube UV Germicidal Light', part:'Johnstone L82-456 (TUV-BTER2)', cost:234.14, hrs:1.5, mat:25},
+  {group:'UV Lights', name:'Fresh-Aire Blue-Tube UV-X Germicidal Light (24V)', part:'Johnstone L82-622 (TUV-BTX-ER3)', cost:270.45, hrs:1.5, mat:25},
+  {group:'UV Lights', name:'Fresh-Aire APCO-X Ultra UV Air Treatment System', part:'Johnstone L82-920 (TUV-APCOX-U)', cost:574.61, hrs:2, mat:25},
+  {group:'Whole-Home Air Purifiers', name:'REME HALO Whole-Home In-Duct Air Purifier', part:'Johnstone L83-034 (REME-H-T)', cost:428.61, hrs:2, mat:25},
+  {group:'Whole-Home Air Purifiers', name:'HALO-LED Whole-Home In-Duct Air Purifier', part:'Johnstone L83-035 (REME-LED-AS)', cost:578.78, hrs:2, mat:25},
+  {group:'Whole-Home Air Purifiers', name:'AprilAire 2210 MERV 11 Media Air Cleaner', part:'Johnstone L92-037', cost:169.41, hrs:3, mat:75},
+];
+function addonPresetPrice(a){
+  const parts = a.cost * (1 + tierMarkupPct(a.cost)/100);
+  const rate = (rateStore && rateStore.install && rateStore.install.res) || 82;
+  const raw = parts + a.hrs * rate + a.mat;
+  return Math.ceil(raw / 5) * 5;   // round up to the next $5
+}
+function populateAddonPresets(){
+  const sel = document.getElementById('addonPreset'); if(!sel) return;
+  let html = '<option value="">Quick add: humidifier, UV light, air purifier…</option>', g = '';
+  ADDON_PRESETS.forEach((a,i)=>{
+    if(a.group !== g){ if(g) html += '</optgroup>'; g = a.group; html += `<optgroup label="${esc(g)}">`; }
+    html += `<option value="${i}">${esc(a.name)} — ${money(addonPresetPrice(a))}</option>`;
+  });
+  sel.innerHTML = html + '</optgroup>';
+  const rate = (rateStore && rateStore.install && rateStore.install.res) || 82;
+  document.getElementById('addonPresetNote').textContent = `Installed prices from Johnstone (De Pere) cost on ${ADDON_PRICE_DATE}, the company markup table, and install labor at $${rate}/hr. Edit any price after adding.`;
+}
+function quickAddAddon(){
+  const sel = document.getElementById('addonPreset');
+  if(sel.value === '') return;
+  const a = ADDON_PRESETS[+sel.value];
+  const name = a.name + ' (installed)';
+  const price = addonPresetPrice(a);
+  if(quoteStyle === 'gbb' && document.getElementById('addonAllOptions').checked){
+    readEditorIntoTier(activeTier);
+    tiers.forEach((t,i)=>{ if(i !== activeTier){ t.addons = (t.addons||[]).filter(x=>x.name !== name); t.addons.push({name, price:String(price)}); } });
+  }
+  // drop an empty placeholder row, then add
+  [...document.querySelectorAll('#optsBody .opt-row')].forEach(r=>{ const ins = r.querySelectorAll('input'); if(!ins[0].value && !ins[1].value) r.remove(); });
+  addOption(name, price);
+  sel.value = '';
+  updateGbbUI();
+}
+
 // ================= GUIDED STEPS =================
 let currentStep = 1;
 const STEP_COUNT = 5;
@@ -1833,6 +1895,7 @@ function updateGbbUI(){
   document.getElementById('gbbWrap').style.display = on ? 'block' : 'none';
   document.getElementById('detailModeWrap').style.display = on ? 'none' : 'block';
   document.getElementById('singleWarrantyCard').style.display = on ? 'none' : 'block';
+  document.getElementById('addonAllWrap').style.display = on ? 'flex' : 'none';
   updateStepHints();
   if(!on) return;
   const st = collectFormStateRaw();
@@ -2676,6 +2739,7 @@ addPart('', 0, 50, 1);
 renderQuotesList();
 renderTemplateList();
 render();
+populateAddonPresets();
 goStep(1);
 updateStepHints();
 showView('home');
