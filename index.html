@@ -1622,7 +1622,7 @@ function esc(s){
 
 // ================= EQUIPMENT PRICE BOOK (Johnstone Supply cost sheets, ©Johnstone 05-2025) =================
 // Furnaces and AC + matching coil, added as part lines at cost so the company markup table applies.
-const EQUIP_PRICE_SOURCE = 'Coleman & Evcon: Johnstone Supply equipment sheets (©05-2025) · Lennox: USA Heating proposed replacement pricing';
+const EQUIP_PRICE_SOURCE = 'Coleman & Evcon: Johnstone De Pere account pricing (checked Nov 23, 2026) · Lennox: USA Heating proposed replacement pricing';
 const EQUIP_FURNACES = [
   // brand, series label, js#, mfg#, btu in, cost
   ['Coleman','Z8ES 80% AFUE single-stage', [
@@ -1660,6 +1660,10 @@ const EQUIP_FURNACES = [
   ['Lennox','Signature SLP99 99% AFUE modulating variable-speed', [
     ['26J92','SLP99UH070XV36BK',70000,1928],['26J91','SLP99UH090XV36CK',90000,1989],['26J74','SLP99UH090XV48CK',90000,2030],
     ['26J73','SLP99UH090XV60CK',90000,2131],['26J71','SLP99UH110XV60CK',110000,2212],['26J70','SLP99UH135XV60DK',135000,2334]]],
+  ['Evcon','RGF19 95.5% AFUE single-stage', [
+    ['L60-187','RGF19026AE08MP13',26000,728.24],['L95-455','RGF19040AE10MP13',40000,832.17],['L95-456','RGF19060AE10MP13',60000,856.97],
+    ['L95-457','RGF19060BE12MP13',60000,886.86],['L95-458','RGF19080BE12MP13',80000,911.30],['L95-459','RGF19080CE16MP13',80000,1025.81],
+    ['L95-463','RGF19120DE20MP13',120000,1154.18]]],
   ['Evcon','RG19 96% AFUE single-stage', [
     ['L62-698','RG19026A08MPS1',26000,928.44],['L62-699','RG19040A10MPS1',40000,1050.61],['L62-700','RG19060A10MPS1',60000,1081.97],
     ['L62-701','RG19060B12MPS1',60000,1119.90],['L62-702','RG19080B12MPS1',80000,1150.53],['L62-703','RG19080C16MPS1',80000,1296.03],
@@ -1701,26 +1705,19 @@ const EQUIP_ACS = [
 ];
 // CTF cased up/downflow coils with TXV, by tonnage (btu/1000) and cabinet width letter (A 14.5", B 17.5", C 21", D 24.5")
 // Each brand's sheet lists its own coil price.
+// CTF cased up/downflow coils with TXV — current S2 models, Johnstone account pricing checked Nov 23, 2026
 const EQUIP_COILS = {
   Coleman: {
-    18:{A:['B68-219','CTF18A5AAS1',580.38],B:['B68-220','CTF18B5AAS1',580.38]},
-    24:{A:['B68-221','CTF24A5ABS1',635.82],B:['B68-222','CTF24B5ABS1',664.11]},
-    30:{A:['B68-223','CTF30A5ADS1',762.87],B:['B68-224','CTF30B5ACS1',723.59],C:['B68-225','CTF30C5ACS1',722.44]},
-    36:{B:['B68-226','CTF36B5ADS1',761.70],C:['B68-230','CTF36C5CDS1',774.42]},
-    42:{C:['B68-231','CTF42C5CES1',803.29]},
-    48:{C:['B68-232','CTF48C5CFS1',898.57],D:['B68-233','CTF48D5CFS1',940.72]},
-    60:{C:['B68-234','CTF60C5CGS1',977.10],D:['B68-236','CTF60D5CGS1',1011.75]},
-  },
-  Evcon: {
-    18:{A:['B68-219','CTF18A5AAS1',594.89],B:['B68-220','CTF18B5AAS1',594.89]},
-    24:{A:['B68-221','CTF24A5ABS1',651.72],B:['B68-222','CTF24B5ABS1',680.72]},
-    30:{A:['B68-223','CTF30A5ADS1',781.94],B:['B68-224','CTF30B5ACS1',741.68],C:['B68-225','CTF30C5ACS1',740.50]},
-    36:{B:['B68-226','CTF36B5ADS1',780.74],C:['B68-230','CTF36C5CDS1',793.78]},
-    42:{C:['B68-231','CTF42C5CES1',823.37]},
-    48:{C:['B68-232','CTF48C5CFS1',921.03],D:['B68-233','CTF48D5CFS1',964.24]},
-    60:{C:['B68-234','CTF60C5CGS1',1001.53],D:['B68-236','CTF60D5CGS1',1037.04]},
+    18:{A:['B53-949','CTF18A5AAS2',594.89],B:['B53-950','CTF18B5AAS2',594.89]},
+    24:{A:['B53-951','CTF24A5ABS2',651.72],B:['B53-952','CTF24B5ABS2',680.72]},
+    30:{A:['B53-953','CTF30A5ADS2',781.94],B:['B53-954','CTF30B5ACS2',741.68],C:['B53-956','CTF30C5ACS2',740.50]},
+    36:{B:['B53-957','CTF36B5ADS2',780.74],C:['B53-961','CTF36C5CDS2',793.78]},
+    42:{C:['B53-963','CTF42C5CES2',823.37]},
+    48:{C:['B53-965','CTF48C5CFS2',921.03],D:['B53-966','CTF48D5CFS2',964.24]},
+    60:{C:['B53-967','CTF60C5CGS2',1001.53],D:['B53-969','CTF60D5CGS2',1037.04]},
   },
 };
+EQUIP_COILS.Evcon = EQUIP_COILS.Coleman;   // Evcon systems use the same Coleman CTF coils
 // Lennox CK40CT cased coils (no 3.5-ton coil listed; 3.5 ton uses the 4-ton coil)
 EQUIP_COILS.Lennox = {
   18:{A:['25U70','CK40CT-18/24A',383],B:['25U71','CK40CT-18/24B',397]},
@@ -1737,7 +1734,7 @@ const WIDTH_ORDER = ['A','B','C','D'];
 function tonLabel(btu){ const t = btu/12000; return (Number.isInteger(t) ? t : t.toFixed(1)) + ' ton'; }
 function furnaceWidthLetter(mfg){
   const s = String(mfg);
-  const m = s.match(/\d{3}([A-D])\d/) || s.match(/([A-D])K$/);   // Coleman/Evcon …080B12… · Lennox …36BK
+  const m = s.match(/\d{3}([A-D])E?\d/) || s.match(/([A-D])K$/);   // Coleman/Evcon …080B12… / …080BE12… · Lennox …36BK
   return m ? m[1] : '';
 }
 function pickCoil(brand, tons, width){
@@ -1757,7 +1754,7 @@ function coilDesc(brand, tons, c){ return `${brand} matching cased coil w/ TXV, 
 
 // Which brands each option shows, in order (80% furnaces are left out for now)
 const EQUIP_HIDE_80 = true;
-const EQUIP_HIDDEN_SERIES = ['Coleman CP9C'];   // series left out of the drop-downs for now
+const EQUIP_HIDDEN_SERIES = ['Coleman CP9C', 'Coleman TM9V'];   // series left out of the drop-downs for now
 // When one furnace size comes in more than one cabinet width, keep just one:
 // 80K and below -> B cabinet; above 80K -> D cabinet (or the widest offered).
 function preferredWidth(btu, widths){
