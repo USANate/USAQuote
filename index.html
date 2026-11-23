@@ -1246,7 +1246,7 @@ function setJobType(t){
   document.getElementById('includeTax').checked = (t !== 'install');
   // Truck/dispatch charges are no longer quoted
   document.getElementById('truckCharge').value = 0;
-  // Installs start at the standard 16 labor hours; switching back to service clears that default
+  // Installs start at the standard 20 labor hours; switching back to service clears that default
   const lh = document.getElementById('laborHours');
   const h = parseFloat(lh.value)||0;
   if(t === 'install' && h === 0) lh.value = STD_INSTALL_HOURS;
@@ -1642,7 +1642,7 @@ const EQUIP_FURNACES = [
     ['L94-030','TM9V120D20MP12C',120000,2271.46]]],
   ['Coleman','CP9C 98% AFUE modulating', [
     ['L94-012','CP9C060B12MP13C',60000,2569.88],['L94-014','CP9C080C16MP13C',80000,2717.93],['L94-015','CP9C100C16MP13C',100000,2813.11],
-    ['L94-016','CP9C100C20MP13C',120000,2860.71],['L94-017','CP9C120C20MP13C',120000,2960.75]]],
+    ['L94-016','CP9C100C20MP13C',100000,2860.71],['L94-017','CP9C120C20MP13C',120000,2960.75]]],
   ['Lennox','Merit ML196 96% AFUE single-stage', [
     ['26N99','ML196UH045XE36BK',45000,1094],['26P11','ML196UH070XE36BK',70000,1148],['26P49','ML196UH070XE48BK',70000,1179],
     ['26P50','ML196UH090XE36CK',90000,1202],['26P24','ML196UH090XE48CK',90000,1220],['26P56','ML196UH090XE60CK',90000,1254],
@@ -1725,7 +1725,7 @@ EQUIP_COILS.Lennox = {
   48:{B:['25U81','CK40CT-48B',496],C:['25U82','CK40CT-48C',506]},
   60:{C:['25U85','CK40CT-60C',563],D:['25U86','CK40CT-60D',600]},
 };
-const COIL_DEFAULT_WIDTH = {18:'B',24:'B',30:'B',36:'B',42:'C',48:'C',60:'C'};
+const COIL_DEFAULT_WIDTH = {18:'B',24:'B',30:'B',36:'B',42:'D',48:'D',60:'D'};   // up to 3 ton -> B; 3.5-5 ton -> D (or closest offered); a chosen furnace's width wins
 const WIDTH_ORDER = ['A','B','C','D'];
 
 function tonLabel(btu){ const t = btu/12000; return (Number.isInteger(t) ? t : t.toFixed(1)) + ' ton'; }
@@ -1749,18 +1749,41 @@ function furnaceDesc(brand, series, u){ return `${brand} ${series} gas furnace, 
 function acDesc(brand, series, u){ return `${brand} ${series} air conditioner, ${tonLabel(u[2])} (${u[1]})`; }
 function coilDesc(brand, tons, c){ return `${brand} matching cased coil w/ TXV, ${tonLabel(tons*1000)} (${c.mfg})`; }
 
+// Which brands each option shows, in order (80% furnaces are left out for now)
+const EQUIP_HIDE_80 = true;
+const EQUIP_HIDDEN_SERIES = ['Coleman CP9C'];   // series left out of the drop-downs for now
+// When one furnace size comes in more than one cabinet width, keep just one:
+// 80K and below -> B cabinet; above 80K -> D cabinet (or the widest offered).
+function preferredWidth(btu, widths){
+  if(btu <= 80000 && widths.includes('B')) return 'B';
+  if(btu > 80000 && widths.includes('D')) return 'D';
+  return widths.slice().sort((a,b)=>WIDTH_ORDER.indexOf(b)-WIDTH_ORDER.indexOf(a))[0];
+}
+function keepFurnaceUnit(list, u){
+  const widths = [...new Set(list.filter(x=>x[2]===u[2]).map(x=>furnaceWidthLetter(x[1])))];
+  if(widths.length < 2) return true;
+  return furnaceWidthLetter(u[1]) === preferredWidth(u[2], widths);
+}
 function equipBrandOrder(){
-  const t = (quoteStyle === 'gbb' && tiers[activeTier]) ? (tiers[activeTier].name||'') : '';
-  return /premium/i.test(t) ? ['Lennox','Coleman','Evcon'] : ['Coleman','Evcon','Lennox'];
+  if(quoteStyle !== 'gbb' || !tiers[activeTier]) return ['Coleman','Evcon','Lennox'];
+  const n = tiers[activeTier].name || '';
+  if(/premium/i.test(n)) return ['Lennox'];
+  if(/recommend/i.test(n)) return ['Coleman','Lennox'];
+  if(/standard/i.test(n)) return ['Evcon','Coleman','Lennox'];
+  return [['Evcon','Coleman','Lennox'],['Coleman','Lennox'],['Lennox'],['Lennox']][Math.min(activeTier,3)];
 }
 function populateEquipPickers(){
   const f = document.getElementById('equipFurnace'), a = document.getElementById('equipAC');
   if(!f || !a) return;
   const order = equipBrandOrder();
-  const byBrand = (list)=> list.map((s,si)=>({s,si})).sort((x,y)=>order.indexOf(x.s[0])-order.indexOf(y.s[0]));
+  const byBrand = (list)=> list.map((s,si)=>({s,si}))
+    .filter(x=> order.includes(x.s[0]) && !(EQUIP_HIDE_80 && /\b80% AFUE/.test(x.s[1])) && !EQUIP_HIDDEN_SERIES.some(h=> (x.s[0]+' '+x.s[1]).startsWith(h)))
+    .sort((x,y)=>order.indexOf(x.s[0])-order.indexOf(y.s[0]));
   let fh = '<option value="">Add a furnace…</option>';
   byBrand(EQUIP_FURNACES).forEach(({s,si})=>{
-    fh += `<optgroup label="${esc(s[0]+' '+s[1])}">` + s[2].map((u,ui)=>`<option value="${si}:${ui}">${(u[2]/1000)}K BTU · ${u[1]} — cost ${money(u[3])}</option>`).join('') + '</optgroup>';
+    const opts = s[2].map((u,ui)=>({u,ui})).filter(({u})=> keepFurnaceUnit(s[2], u));
+    if(!opts.length) return;
+    fh += `<optgroup label="${esc(s[0]+' '+s[1])}">` + opts.map(({u,ui})=>`<option value="${si}:${ui}">${(u[2]/1000)}K BTU · ${u[1]} — cost ${money(u[3])}</option>`).join('') + '</optgroup>';
   });
   let ah = '<option value="">Add an AC + matching coil…</option>';
   byBrand(EQUIP_ACS).forEach(({s,si})=>{
@@ -1944,7 +1967,7 @@ let tierLoading = false;
 const TIER_DEFAULT_NAMES = ['Standard','Recommended','Premium','Premium Plus'];
 // Company standards for new quotes
 const STD_WARRANTY = '10-yr parts · 1-yr labor';
-const STD_INSTALL_HOURS = 16;
+const STD_INSTALL_HOURS = 20;
 const STD_MISC_BY_TIER = [500, 700, 950, 950];   // Standard, Recommended, Premium, Premium Plus
 const MISC_DESC = 'Miscellaneous materials';
 function setTierMisc(parts, idx){
@@ -2950,7 +2973,7 @@ function downloadTemplateDocx(){
 document.getElementById('homeLogo').src = document.querySelector('.brandbar img').src;
 populateCountyDropdown();
 loadSettings();
-setJobType('install'); // normalize defaults: install rates, no tax, 16 labor hrs
+setJobType('install'); // normalize defaults: install rates, no tax, 20 labor hrs
 document.getElementById('quoteWarranty').value = STD_WARRANTY;
 addPart('', 0, 50, 1);
 renderQuotesList();
